@@ -45,6 +45,13 @@ header i:hover { color: #fff; }
 header > #right { position: absolute; right: 15px; }
 #profile-img { border-radius: 50%; cursor: pointer; }
 
+#title {
+    cursor: pointer;
+    font-family: Montserrat;
+    font-size: 30px;
+
+}
+
 /* Separator */
 
 hr
@@ -63,23 +70,24 @@ hr
   right: 20px;
 
   padding: 14px 20px;
-  font-size: 16px;
   font-weight: bold;
 
-  background-color: #ff7043;
   color: white;
-  border: none;
   border-radius: 50px;
 
-  cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-
-  transition: all 0.2s ease;
 }
 
-.floating-btn:hover {
-  background-color: #f4511e;
-  transform: translateY(-2px);
+.big-button {
+    font-size: 16px;
+    background-color: #525d67;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.big-button:hover {
+    background-color: #374049;
 }
 
 #plus-svg {
@@ -129,4 +137,72 @@ hr
   padding: 4px 10px;
   border-radius: 8px;
   font-size: 12px;
+}
+
+
+/* New Recipe */
+
+.container {
+  max-width: 600px;
+  width: 100%;
+  background-color: #ffffff;
+  padding: 30px;
+  margin-top: 30px;
+  border-radius: 12px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+/* Form Groups */
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 6px;
+  color: #555;
+}
+
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: vertical;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  border-color: #ff7043;
+  box-shadow: 0 0 5px rgba(255,112,67,0.3);
+  outline: none;
+}
+
+small {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #888;
+}
+
+/* Submit Button */
+button[type="submit"] {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  color: #fff;
+  border-radius: 10px;
 }
