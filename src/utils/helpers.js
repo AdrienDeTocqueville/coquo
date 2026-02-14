@@ -51,6 +51,17 @@ export function makeReactive(obj, key, callback)
     }
     
     defProp(obj, key, callback);
+
+    if (Array.isArray(obj[key]))
+    {
+        const originalPush = obj[key].push;
+        obj[key].push = function(...args) {
+            const oldLength = obj[key].length;
+            const result = originalPush.apply(obj[key], args);
+            callback();
+            return result;
+        };
+    }
 }
 
 /**
