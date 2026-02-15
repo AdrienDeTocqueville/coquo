@@ -48,6 +48,33 @@ auth.onAuthStateChanged(user => {
     }
 });
 
+let DB = {
+    descriptors: null,
+
+    load_descriptors: function() {
+        if (DB.descriptors != null)
+        {
+            return new Promise((resolve) => { resolve(DB.descriptors); });
+        }
+
+        return db.collection("descriptors").get()
+            .then((querySnapshot) => {
+                DB.descriptors = [];
+                querySnapshot.forEach((doc) => {
+                    let desc = doc.data();
+                    desc.hash = doc.id;
+                    DB.descriptors.push(desc);
+                });
+
+                return DB.descriptors;
+            })
+            .catch((error) => {
+                console.error("Error getting recipe descriptors:", error);
+                return null;
+            });
+    }
+};
+
 // CIRCULAR
 
 let app = new App({
@@ -65,7 +92,7 @@ let router = new Router({
 router.addRoute("#/home", {
 	view: `
 		<div class="recipe-container">
-            <a c-for="r in recipes" class="recipe-card" c-on:click="$router.goto(r.hash)">
+            <a c-for="r in recipes" class="recipe-card" c-bind:href="getURL(r)">
                 <h2 class="recipe-name">{{r.name}}</h2>
                 <div class="tags">
                     <span class="tag" c-for="tag in r.tags">{{tag}}</span>
@@ -82,22 +109,13 @@ router.addRoute("#/home", {
         recipes: []
     },
     controller: {
-        onLoad: function() {
+        getURL: function(recipe) {
+            return '#/' + recipe.hash;
+        },
+        onShow: function() {
+            document.title = "Coquo";
 
-            db.collection("descriptors").get()
-                .then((querySnapshot) => {
-                    let descriptors = [];
-                    querySnapshot.forEach((doc) => {
-                        let desc = doc.data();
-                        desc.hash = doc.id;
-                        descriptors.push(desc);
-                    });
-
-                    this.recipes = descriptors;
-                })
-                .catch((error) => {
-                    console.error("Error getting recipe descriptors:", error);
-                });
+            DB.load_descriptors().then((descriptors) => { this.recipes = descriptors; });
         }
     }
 });
@@ -214,6 +232,7 @@ router.addRoute("#/new-recipe", {
         onShow: function() {
             const form = document.querySelector('.recipe-form');
 
+            document.title = "Nouvelle Recette";
             form.addEventListener('submit', function(event) {
                 event.preventDefault(); // Prevent page reload
                 router.currentComponent.submit_form();
@@ -226,29 +245,55 @@ router.addRoute("#/new-recipe", {
 router.addRoute("#/*", {
 	view: `
         <div class="container">
-            <div c-if="loaded">
-                <h1>{{recipe.name}}</h1>
+            <div c-if="recipe != null">
+                <div class="recipe-header">
+                    <h1>{{recipe.name}}</h1>
 
-                <span>Ingrédients</span>
+                    <div class="additional">
+                        <div class="additional-item">
+                            <img src="/img/preparation.svg" class="icon">
+                            <span>{{recipe.cooking_time}}</span>
+                        </div>
+                        <div class="additional-item">
+                            <img src="/img/cuisson.svg" class="icon">
+                            <span>{{recipe.prep_time}}</span>
+                        </div>
+                    </div>
+
+                    <div class="additional-actions">
+                        <i c-on:click="this.edit();" class="fa-regular fa-pen-to-square"></i>
+                        <i c-on:click="this.delete();" class="fa-regular fa-trash-can"></i>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h6>Ingrédients</h6>
                 <ul>
                     <li class="ingredient" c-for="i in recipe.ingredients">{{i.count}}{{i.unit}} de {{i.name}}</li>
                 </ul>
 
-                <span>Étapes</span>
-                <ol>
+                <h6>Étapes</h6>
+                <ol class="steps">
                     <li class="step" c-for="s in recipe.steps">{{s.txt}}
-                        <div class="alert alert-info help-note" c-for="n in s.notes">{{n}}</div>
+                        <div class="help-note" c-for="n in s.notes">{{n}}</div>
                     </li>
                 </ol>
 		    </div>
 		</div>
 	`,
     model: {
-        loaded: false,
-        recipe: {}
+        recipe: null
     },
 
     controller: {
+        edit: function() {
+            // open recipe editor
+        },
+        delete: function() {
+            // ask for confirmation
+            // delete desc + recipe
+        },
         onShow: function() {
             let hash = this.$router.route.substr(1);
             let desc, recipe;
@@ -276,7 +321,8 @@ router.addRoute("#/*", {
                                 ingredients: recipe.ingredients,
                                 steps: recipe.steps
                             };
-                            this.loaded = true;
+
+                            document.title = desc.name;
                         })
                         .catch((error) => {
                             console.error("Error getting recipe (TODO: stale descriptor, erase it):", error);
@@ -289,7 +335,7 @@ router.addRoute("#/*", {
 
         },
         onHide: function() {
-            this.loaded = false;
+            this.recipe = null;
         }
     }
 });
