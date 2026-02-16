@@ -1,5 +1,5 @@
-import App from '/dist/circular.js'
-import Router from '/dist/router.js'
+import App from './dist/circular.js'
+import Router from './dist/router.js'
 
 // STUFF
 
