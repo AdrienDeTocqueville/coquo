@@ -3,9 +3,6 @@ import Router from './dist/router.js'
 
 // STUFF
 
-const TAGS = ["Tarte", "Patisserie", "Gateau", "Pâte"];
-const UNITS = ["g", "kg", "mL", "L"];
-
 function randomString(length) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
@@ -31,7 +28,11 @@ document.querySelector("#logout").addEventListener("click", () => {
 
 let app = new App({
     selector: "coquo",
-    view: "<router> </router>"
+    view: "<router> </router>",
+    model: {
+        TAGS: ["Tarte", "Patisserie", "Gateau", "Pâte"],
+        UNITS: ["g", "kg", "mL", "L", "personnes"],
+    }
 });
 
 let router = new Router({
@@ -74,56 +75,61 @@ router.addRoute("#/home", {
     }
 });
 
+let observer = null;
 router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
 	view: `
         <div class="container">
             <form class="recipe-form">
 
-              <!-- Recipe Name -->
-              <div class="form-group">
+            <!-- Recipe Name -->
+            <div class="form-group">
                 <h2>Nouvelle Recette</h2>
                 <input type="text" placeholder="Nom de la recette" c-model="name" required>
-              </div>
+            </div>
 
-              <!-- Cooking Time -->
-              <div class="form-group" style="display: flex; gap: 25px">
-                <input type="text" placeholder="Temps de cuisson" min="1" c-model="cooking_time" required>
-                <input type="text" placeholder="Temps de preparation" min="1" c-model="prep_time" required>
-              </div>
+            <!-- Cooking Time -->
+            <div class="form-group" style="display: flex; gap: 25px">
+                <img src="./img/preparation.svg" class="icon">
+                <input id="prep" type="text" placeholder="Temps de preparation" min="1" c-model="prep_time" required>
+
+                <img src="./img/cuisson.svg" class="icon">
+                <input id="cook" type="text" placeholder="Temps de cuisson" min="1" c-model="cooking_time" required>
+            </div>
 
 
-              <!-- Multi-Tag Combo Box -->
-              <div class="form-group">
-                <h2>Tags</h2>
-                <div class="tag-input-container">
-                  <div class="tags" id="tags-container"></div>
-                  <input list="tag-options" id="tag-input" placeholder="Type to add a tag">
-                  <datalist id="tag-options">
-                    <option value="Vegan">
-                    <option value="Vegetarian">
-                    <option value="Dessert">
-                    <option value="Quick">
-                    <option value="Healthy">
-                    <option value="Dinner">
-                    <option value="Lunch">
-                  </datalist>
-                </div>
-                <small>Press Enter or select from dropdown to add multiple tags</small>
-              </div>
+            <!-- Tags -->
+            <div class="form-group" style="display: flex; gap: 25px">
+                <button class="btn tag-list dropdown-toggle" type="button" id="tags-dropdown" data-bs-toggle="dropdown" aria-expanded="false">{{get_tags_preview()}}</button>
+                <ul class="dropdown-menu" aria-labelledby="tags-dropdown">
+                    <li c-for="tag in $parent.TAGS" c-on:click="toggle_tag(tag)" class="dropdown-item">
+                        <input class="form-check-input" type="checkbox" c-if="has_tag(tag)" checked>
+                        <input class="form-check-input" type="checkbox" c-if="!has_tag(tag)">
+                        {{tag}}
+                    </li>
+                </ul>
 
-              <!-- Ingredients -->
-              <div class="form-group" style="position: relative">
+                <input id="count" type="number" placeholder="Quantité" min="1" c-model="count" required>
+
+                <button class="btn tag-list dropdown-toggle" type="button" id="unit-dropdown" data-bs-toggle="dropdown" aria-expanded="false">{{unit}}</button>
+                <ul class="dropdown-menu" aria-labelledby="unit-dropdown">
+                    <li c-for="u in $parent.UNITS" c-on:click="unit = u" class="dropdown-item">{{u}}</li>
+                </ul>
+            </div>
+
+
+            <!-- Ingredients -->
+            <div class="form-group" style="position: relative">
                 <h2>Ingrédients</h2>
 
                 <i c-on:click="add_recipe_link()" class="add-group fa-regular fa-square-plus"></i>
 
                 <div class="ingredient-list">
-                    <div c-for="link in recipe_links" class="ingredient-group">
+                    <div c-for="link in recipe_links" class="recipe-link">
 
-                        <input c-on:input="handle_count(link)" style="width: 150px" type="number" placeholder="Quantité" min="1" required>
+                        <input c-on:input="handle_count(link)" class="link-count" style="width: 150px" type="number" placeholder="Quantité" min="1" required>
 
                         <div style="position: relative; width: 100%">
-                            <input c-on:input="handle_link(link)" type="text" placeholder="Recette..." required>
+                            <input c-on:input="handle_link(link)" class="link-hash" type="text" placeholder="Recette..." required>
                             <ul class="suggestions"></ul>
                         </div>
 
@@ -132,16 +138,17 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
 
                     <textarea c-model="ingredients" id="ingredients" placeholder="List each ingredient on a new line" rows="3" required></textarea>
                 </div>
-              </div>
+            </div>
 
-              <!-- Steps -->
-              <div class="form-group">
+            <!-- Steps -->
+            <div class="form-group">
                 <h2>Étapes</h2>
                 <textarea placeholder="Describe each step on a new line" rows="20" c-model="steps" required></textarea>
-              </div>
+            </div>
 
-              <!-- Submit -->
-              <button class="big-button" type="submit">{{submit_text}}</button>
+            <!-- Submit -->
+            <button class="big-button" type="submit">{{submit_text}}</button>
+
             </form>
         </div>
 	`,
@@ -149,6 +156,7 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
         name: "",
         cooking_time: "", prep_time: "",
         tags: [],
+        count: "", unit: "personnes",
         recipe_links: [],
         ingredients: "",
         steps: "",
@@ -165,9 +173,25 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
             }
             return 0;
         },
+        get_tags_preview: function() {
+            if (this.tags.length == 0) return "Aucun tag";
+            return this.tags.join(", ");
+        },
+        has_tag: function(tag) {
+            return this.tags.indexOf(tag) != -1;
+        },
+        toggle_tag: function(tag) {
+            let tags = this.tags.slice();
+            let idx = tags.indexOf(tag);
+            if (idx == -1)
+                tags.push(tag);
+            else
+                tags.splice(idx, 1);
+            this.tags = tags;
+        },
         add_recipe_link: function() {
             let links = this.recipe_links.slice(); // shallow copy
-            links.push({count: 1, link: ""});
+            links.push({count: 1, hash: ""});
             this.recipe_links = links;
         },
         delete_link: function(link) {
@@ -215,7 +239,7 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
                         suggestions.style.display = "none";
 
                         let idx = this.find_link(link);
-                        this.recipe_links[idx].link = item.hash;
+                        this.recipe_links[idx].hash = item.hash;
                     });
 
                     suggestions.appendChild(li);
@@ -238,6 +262,7 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
             let recipe = {
                 cooking_time: this.cooking_time,
                 prep_time: this.prep_time,
+                recipe_links: this.recipe_links,
                 ingredients: this.parse_ingredients(),
                 steps: this.parse_steps(),
             }
@@ -369,12 +394,46 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
                     this.tags = result.desc.tags;
                     this.cooking_time = result.recipe.cooking_time;
                     this.prep_time = result.recipe.prep_time;
+                    this.recipe_links = result.recipe.recipe_links;
                     this.ingredients = this.unparse_ingredients(result.recipe.ingredients);
                     this.steps = this.unparse_steps(result.recipe.steps);
                     this.submit_text = "Sauvegarder les modifications";
                     this.current_hash = hash;
                     document.title = "Modifier la Recette";
+                })
+                .then(() => {
+                    if (observer == null)
+                    {
+                        let target = document.querySelector(".ingredient-list");
+
+                        observer = new MutationObserver((mut, obs) => {
+
+                            let counts = target.querySelectorAll(".link-count");
+                            let hashes = target.querySelectorAll(".link-hash");
+
+                            for (let i = 0; i < counts.length; i++)
+                                counts[i].value = this.recipe_links[i].count;
+
+                            DB.load_descriptors().then((descriptors) => {
+                                for (let i = 0; i < hashes.length; i++)
+                                {
+                                    let recipe = descriptors.find(r => r.hash == this.recipe_links[i].hash);
+                                    if (recipe != null)
+                                        hashes[i].value = recipe.name;
+                                }
+                            });
+                        });
+                        observer.observe(target, { childList: true, subtree: true });
+                    }
                 });
+            }
+        },
+
+        onHide: function() {
+            if (observer != null)
+            {
+                observer.disconnect();
+                observer = null;
             }
         }
     }
@@ -406,11 +465,11 @@ router.addRoute("#/*", {
                     <div class="additional">
                         <div class="additional-item">
                             <img src="./img/preparation.svg" class="icon">
-                            <span>{{recipe.cooking_time}}</span>
+                            <span>{{recipe.prep_time}}</span>
                         </div>
                         <div class="additional-item">
                             <img src="./img/cuisson.svg" class="icon">
-                            <span>{{recipe.prep_time}}</span>
+                            <span>{{recipe.cooking_time}}</span>
                         </div>
                     </div>
 
@@ -424,13 +483,17 @@ router.addRoute("#/*", {
 
                 <h6>Ingrédients</h6>
                 <ul>
+                    <li class="ingredient" c-for="l in recipe.recipe_links">{{l.count}} {{l.name}}</li>
                     <li class="ingredient" c-for="i in recipe.ingredients">{{i.count}}{{i.unit}} {{i.item}}</li>
                 </ul>
 
                 <h6>Étapes</h6>
                 <ol class="steps">
                     <li class="step" c-for="s in recipe.steps">{{s.txt}}
-                        <div class="help-note" c-for="n in s.notes">{{n}}</div>
+                        <div class="help-note" c-for="n in s.notes">
+                            {{n.txt}}
+                            <a c-if="n.link != null" c-bind:href="n.link">{{n.link}}</a>
+                        </div>
                     </li>
                 </ol>
 		    </div>
@@ -473,12 +536,41 @@ router.addRoute("#/*", {
                     tags: desc.tags,
                     cooking_time: recipe.cooking_time,
                     prep_time: recipe.prep_time,
+                    recipe_links: recipe.recipe_links,
                     ingredients: recipe.ingredients,
                     steps: recipe.steps
                 };
 
+                for (let step of this.recipe.steps)
+                {
+                    for (let i = 0; i < step.notes.length; i++)
+                    {
+                        step.notes[i] = { txt: step.notes[i], link: null };
+
+                        const urlRegex = /(https?:\/\/[^\s]+)/g;
+                        const matches = step.notes[i].txt.match(urlRegex);
+                        if (matches != null)
+                        {
+                            step.notes[i].txt = step.notes[i].txt.replace(matches[0], "");
+                            step.notes[i].link = matches[0];
+                        }
+                    }
+                }
+
+                for (let link of this.recipe.recipe_links)
+                    link.name = "";
+
                 document.title = desc.name;
 
+                return DB.load_descriptors();
+            })
+            .then((descriptors) =>{
+                for (let link of this.recipe.recipe_links)
+                {
+                    let recipe = descriptors.find(r => r.hash == link.hash);
+                    if (recipe != null)
+                        link.name = recipe.name;
+                }
             })
             .catch((error) => {
                 // Recipe doesn't exist, redirect home

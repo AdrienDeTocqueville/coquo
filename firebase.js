@@ -102,6 +102,11 @@ var DB = {
                     throw new Error("Recipe not found");
                 recipe = doc.data();
 
+                // TODO: This sanitizes data during dev
+                // Should probably be removed once test data is removed
+                if (recipe.recipe_links == undefined)
+                    recipe.recipe_links = [];
+
                 for (let step of recipe.steps)
                 {
                     if (step.notes == undefined)
