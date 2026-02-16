@@ -72,8 +72,77 @@ let DB = {
                 console.error("Error getting recipe descriptors:", error);
                 return null;
             });
-    }
+    },
+
+    get_recipe: function(hash) {
+        let desc, recipe;
+        return db.collection("descriptors").doc(hash).get()
+            .then((doc) => {
+                if (!doc.exists)
+                    throw new Error("Descriptor not found");
+                desc = doc.data();
+            })
+            .then(() => db.collection("recipes").doc(hash).get())
+            .then((doc) => {
+                if (!doc.exists)
+                    throw new Error("Recipe not found");
+                recipe = doc.data();
+
+                for (let step of recipe.steps)
+                {
+                    if (step.notes == undefined)
+                        step.notes = []
+                }
+            })
+            .then(() => { return { desc, recipe }; })
+            .catch((error) => {
+                console.error("Error getting recipe (TODO: stale descriptor, erase it):", error);
+            });
+    },
+
+    set_recipe: function(hash, desc, recipe) {
+        // Clear cache
+        DB.descriptors = null;
+
+        return db.collection("descriptors").doc(hash).set(desc)
+            .catch((error) => {
+                console.error("Error writing desc: ", error);
+            })
+            .then(() => db.collection("recipes").doc(hash).set(recipe))
+            .catch((error) => {
+                console.error("Error writing recipe:", error);
+            });
+    },
+
+    delete_recipe: function(hash) {
+        // Clear cache
+        DB.descriptors = null;
+
+        return db.collection("recipes").doc(hash).delete()
+            .then(() => db.collection("descriptors").doc(hash).delete())
+    },
 };
+
+// STUFF
+
+const TAGS = ["Tarte", "Patisserie", "Gateau", "Pâte"];
+const UNITS = ["g", "kg", "mL", "L"];
+
+function randomString(length) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * chars.length);
+    result += chars[randomIndex];
+  }
+
+  return result;
+}
+
+document.querySelector("#title").addEventListener("click", () => {
+    router.goto(router.defaultRoute);
+});
 
 // CIRCULAR
 
@@ -120,7 +189,7 @@ router.addRoute("#/home", {
     }
 });
 
-router.addRoute("#/new-recipe", {
+router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
 	view: `
         <div class="container">
             <form class="recipe-form">
@@ -187,7 +256,7 @@ router.addRoute("#/new-recipe", {
               </div>
 
               <!-- Submit -->
-              <button class="big-button" type="submit">Create Recipe</button>
+              <button class="big-button" type="submit">{{submit_text}}</button>
             </form>
         </div>
 	`,
@@ -199,6 +268,8 @@ router.addRoute("#/new-recipe", {
         ingredients: "",
         steps: "",
         filtering: false,
+        submit_text: "",
+        current_hash: null,
     },
     controller: {
         find_link: function(link) {
@@ -272,31 +343,22 @@ router.addRoute("#/new-recipe", {
         },
         submit_form: function() {
 
-            let hash = randomString(10); // Hope it doesn't collide
-            let parsed_ingredients = this.parse_ingredients();
-            let parsed_steps = this.parse_steps();
+            let hash = this.current_hash != null ? this.current_hash : randomString(10); // Hope it doesn't collide
 
-            db.collection("descriptors").doc(hash).set({
+            let desc = {
                 name: this.name,
                 tags: this.tags
-            })
-            .then(() => {
-                db.collection("recipes").doc(hash).set({
-                    cooking_time: this.cooking_time,
-                    prep_time: this.prep_time,
-                    ingredients: parsed_ingredients,
-                    steps: parsed_steps,
-                })
-                .then(() => {
-                    this.$router.goto("#/" + hash);
-                })
-                .catch((error) => {
-                    console.error("Error writing recipe (TODO erase descriptor):", error);
-                });
-            })
-            .catch((error) => {
-                console.error("Error writing descriptor:", error);
-            });
+            };
+
+            let recipe = {
+                cooking_time: this.cooking_time,
+                prep_time: this.prep_time,
+                ingredients: this.parse_ingredients(),
+                steps: this.parse_steps(),
+            }
+
+            DB.set_recipe(hash, desc, recipe)
+                .then(() => this.$router.goto("#/" + hash));
         },
 
         extract_leading_number: function(str) {
@@ -311,11 +373,11 @@ router.addRoute("#/new-recipe", {
 
                 if (char >= '0' && char <= '9') {
                     continue;
-                } 
+                }
                 else if ((char === '.' || char === ',') && !hasDecimal) {
                     continue;
                     hasDecimal = true;
-                } 
+                }
                 else {
                     break; // stop at first non-number character
                 }
@@ -348,6 +410,14 @@ router.addRoute("#/new-recipe", {
             return result;
         },
 
+        unparse_ingredients: function(ingredients) {
+            let result = "";
+            for (let ingredient of ingredients)
+                result += ingredient.count + ingredient.unit + " " + ingredient.item + "\n";
+            return result;
+
+        },
+
         parse_steps: function() {
             let lines = this.steps.split("\n\n");
             lines = lines.filter((line) => line.trim().length != 0);
@@ -374,6 +444,18 @@ router.addRoute("#/new-recipe", {
             return result;
         },
 
+        unparse_steps: function(steps) {
+            let result = "";
+            for (let step of steps)
+            {
+                result += step.txt + "\n";
+                for (let note of step.notes)
+                    result += "--\n" + note + "\n--\n";
+                result += "\n";
+            }
+            return result;
+        },
+
         onShow: function() {
             const form = document.querySelector('.recipe-form');
 
@@ -385,12 +467,30 @@ router.addRoute("#/new-recipe", {
             this.recipe_links = [];
             this.ingredients = "";
             this.steps = "";
-
+            this.submit_text = "Enregistrer la recette";
+            this.current_hash = null;
             document.title = "Nouvelle Recette";
+
             form.addEventListener('submit', function(event) {
                 event.preventDefault(); // Prevent page reload
                 router.currentComponent.submit_form();
             });
+
+            if (router.params.length == 3)
+            {
+                let hash = router.params[2];
+                DB.get_recipe(hash).then((result) => {
+                    this.name = result.desc.name;
+                    this.tags = result.desc.tags;
+                    this.cooking_time = result.recipe.cooking_time;
+                    this.prep_time = result.recipe.prep_time;
+                    this.ingredients = this.unparse_ingredients(result.recipe.ingredients);
+                    this.steps = this.unparse_steps(result.recipe.steps);
+                    this.submit_text = "Sauvegarder les modifications";
+                    this.current_hash = hash;
+                    document.title = "Modifier la Recette";
+                });
+            }
         }
     }
 });
@@ -454,49 +554,36 @@ router.addRoute("#/*", {
 
     controller: {
         do_edit: function() {
-            // open recipe editor
+            router.goto("#/edit/" + this.recipe.hash);
         },
         do_delete: function() {
-            // delete from DB
+            this.ask_deletion = false;
+            DB.delete_recipe(this.recipe.hash)
+                .then(() => this.$router.goto(this.$router.defaultRoute));
         },
         onShow: function() {
-            let hash = this.$router.route.substr(1);
-            let desc, recipe;
-            db.collection("descriptors").doc(hash).get()
-                .then((doc) => {
-                    if (!doc.exists)
-                        reject("recipe doesn't exist")
-                    desc = doc.data();
+            let hash = this.$router.route.substr(2);
+            DB.get_recipe(hash).then((result) => {
+                let desc = result.desc;
+                let recipe = result.recipe;
 
-                    db.collection("recipes").doc(hash).get()
-                        .then((doc) => {
-                            recipe = doc.data();
+                this.recipe = {
+                    name: desc.name,
+                    hash: hash,
+                    tags: desc.tags,
+                    cooking_time: recipe.cooking_time,
+                    prep_time: recipe.prep_time,
+                    ingredients: recipe.ingredients,
+                    steps: recipe.steps
+                };
 
-                            for (let step of recipe.steps)
-                            {
-                                if (step.notes == undefined)
-                                    step.notes = []
-                            }
+                document.title = desc.name;
 
-                            this.recipe = {
-                                name: desc.name,
-                                tags: desc.tags,
-                                cooking_time: recipe.cooking_time,
-                                prep_time: recipe.prep_time,
-                                ingredients: recipe.ingredients,
-                                steps: recipe.steps
-                            };
-
-                            document.title = desc.name;
-                        })
-                        .catch((error) => {
-                            console.error("Error getting recipe (TODO: stale descriptor, erase it):", error);
-                        });
-                })
-                .catch((error) => {
-                    // Recipe doesn't exist, redirect home
-                    this.$router.goto(this.$router.defaultRoute);
-                });
+            })
+            .catch((error) => {
+                // Recipe doesn't exist, redirect home
+                this.$router.goto(this.$router.defaultRoute);
+            });
 
         },
         onHide: function() {
@@ -506,21 +593,3 @@ router.addRoute("#/*", {
 });
 
 app.mount();
-
-// STUFF
-
-function randomString(length) {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * chars.length);
-    result += chars[randomIndex];
-  }
-
-  return result;
-}
-
-document.querySelector("#title").addEventListener("click", () => {
-    router.goto(router.defaultRoute);
-});
