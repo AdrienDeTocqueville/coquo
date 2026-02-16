@@ -55,8 +55,7 @@ router.addRoute("#/home", {
             </a>
 
             <button class="big-button floating-btn" id="new-recipe" c-on:click="$router.goto('#/new-recipe')">
-                <svg id="plus-svg" width="24" height="24" viewBox="0 0 24 24" focusable="false"><path d="M20 13h-7v7h-2v-7H4v-2h7V4h2v7h7v2z"></path></svg>
-                Nouvelle Recette
+                <i class="fa-solid fa-plus"></i> Nouvelle Recette
             </button>
 		</div>
 	`,
@@ -260,6 +259,8 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
             };
 
             let recipe = {
+                count: this.count,
+                unit: this.unit,
                 cooking_time: this.cooking_time,
                 prep_time: this.prep_time,
                 recipe_links: this.recipe_links,
@@ -471,6 +472,11 @@ router.addRoute("#/*", {
                             <img src="./img/cuisson.svg" class="icon">
                             <span>{{recipe.cooking_time}}</span>
                         </div>
+
+                        <div class="additional-item" style="margin-left: auto">
+                            <input id="count" style="width: 80px" type="number" min="1" c-model="recipe.count_req">
+                            <span>{{recipe.unit}}</span>
+                        </div>
                     </div>
 
                     <div class="additional-actions">
@@ -483,8 +489,8 @@ router.addRoute("#/*", {
 
                 <h6>Ingrédients</h6>
                 <ul>
-                    <li class="ingredient" c-for="l in recipe.recipe_links">{{l.count}} {{l.name}}</li>
-                    <li class="ingredient" c-for="i in recipe.ingredients">{{i.count}}{{i.unit}} {{i.item}}</li>
+                    <li class="ingredient" c-for="l in recipe.recipe_links">{{l.count * (recipe.count_req/recipe.count)}} <a c-bind:href="'#/'+l.hash">{{l.name}}</a></li>
+                    <li class="ingredient" c-for="i in recipe.ingredients">{{i.count * (recipe.count_req/recipe.count)}}{{i.unit}} {{i.item}}</li>
                 </ul>
 
                 <h6>Étapes</h6>
@@ -534,6 +540,9 @@ router.addRoute("#/*", {
                     name: desc.name,
                     hash: hash,
                     tags: desc.tags,
+                    count: recipe.count,
+                    count_req: recipe.count,
+                    unit: recipe.unit,
                     cooking_time: recipe.cooking_time,
                     prep_time: recipe.prep_time,
                     recipe_links: recipe.recipe_links,
