@@ -405,11 +405,11 @@ router.addRoute("#/*", {
 
                     <div class="additional">
                         <div class="additional-item">
-                            <img src="/img/preparation.svg" class="icon">
+                            <img src="./img/preparation.svg" class="icon">
                             <span>{{recipe.cooking_time}}</span>
                         </div>
                         <div class="additional-item">
-                            <img src="/img/cuisson.svg" class="icon">
+                            <img src="./img/cuisson.svg" class="icon">
                             <span>{{recipe.prep_time}}</span>
                         </div>
                     </div>
