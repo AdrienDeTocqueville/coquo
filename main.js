@@ -22,10 +22,15 @@ document.querySelector("#title").addEventListener("click", () => {
     router.goto(router.defaultRoute);
 });
 
+document.querySelector("#logout").addEventListener("click", () => {
+    DB.logout();
+    router.goto("#/signin");
+});
+
 // CIRCULAR
 
 let app = new App({
-    selector: "recipes",
+    selector: "coquo",
     view: "<router> </router>"
 });
 
@@ -33,8 +38,10 @@ let router = new Router({
 	app,
 	selector: "router",
 	defaultRoute: "#/home",
-	notFoundRoute: "#/404"
+	notFoundRoute: "#/home"
 });
+
+DB.register(router);
 
 router.addRoute("#/home", {
 	view: `
@@ -373,6 +380,21 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
     }
 });
 
+router.addRoute("#/signin", {
+	view: `
+		<div>
+		    <div id="firebaseui-auth-container"></div>
+		</div>
+	`,
+    model: {
+    },
+    controller: {
+        onShow: function() {
+            let signIn = document.querySelector("#firebaseui-auth-container");
+            DB.ui.start('#firebaseui-auth-container', uiConfig);
+        }
+    }
+});
 
 router.addRoute("#/*", {
 	view: `

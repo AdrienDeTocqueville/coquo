@@ -27,26 +27,43 @@ const uiConfig = {
     signInFlow: 'popup'
 };
 
-auth.onAuthStateChanged(user => {
-    if (user == null)
-    {
-        let signIn = document.querySelector("#firebaseui-auth-container");
-        signIn.style.display = "block";
-
-        ui.start('#firebaseui-auth-container', uiConfig);
-    }
-    else
-    {
-        let profilePic = document.querySelector("#profile-img");
-        profilePic.src = user.photoURL;
-        profilePic.style.display = "block";
-
-        console.log("User signed in:", user.displayName);
-    }
-});
+const profilePic = document.querySelector("#profile-img");
 
 var DB = {
     descriptors: null,
+    ui: ui,
+
+    register: function(router) {
+        auth.onAuthStateChanged(user => {
+            if (user == null)
+            {
+                profilePic.src = "";
+                profilePic.style.display = "none";
+
+                router.goto("#/signin");
+
+                console.log("No user signed in");
+            }
+            else
+            {
+                profilePic.src = user.photoURL;
+                profilePic.style.display = "block";
+
+                if (router.route == "#/signin")
+                    router.goto("#/home");
+
+                console.log("User signed in:", user.displayName);
+            }
+        });
+    },
+
+    is_logged: function() {
+        return auth.currentUser != null;
+    },
+
+    logout: function() {
+        auth.signOut();
+    },
 
     load_descriptors: function() {
         if (DB.descriptors != null)
