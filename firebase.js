@@ -14,18 +14,6 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 const ui = new firebaseui.auth.AuthUI(auth);
-const uiConfig = {
-    signInOptions: [
-        firebase.auth.GoogleAuthProvider.PROVIDER_ID
-    ],
-    callbacks: {
-        signInSuccessWithAuthResult: function(authResult, redirectUrl) {
-            console.log("User signed in:", authResult.user.displayName);
-            return false; // Prevent redirect
-        }
-    },
-    signInFlow: 'popup'
-};
 
 const profilePic = document.querySelector("#profile-img");
 
@@ -55,6 +43,27 @@ var DB = {
                 console.log("User signed in:", user.displayName);
             }
         });
+    },
+
+    register_auth_container: function(container) {
+
+        const uiConfig = {
+            signInOptions: [
+                firebase.auth.GoogleAuthProvider.PROVIDER_ID
+            ],
+            callbacks: {
+                signInSuccessWithAuthResult: function(authResult, redirectUrl) {
+                    console.log("User signed in:", authResult.user.displayName);
+                    return false; // Prevent redirect
+                }
+            },
+            signInFlow: 'popup'
+        };
+
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+            .then(() => {
+                ui.start(container, uiConfig);
+            });
     },
 
     is_logged: function() {

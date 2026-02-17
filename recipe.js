@@ -24,6 +24,7 @@ router.addRoute("#/*", {
                     </div>
 
                     <div class="additional-actions">
+                        <i c-on:click="show_groceries = true" class="fa-solid fa-basket-shopping"></i>
                         <i c-on:click="do_edit()" class="fa-regular fa-pen-to-square"></i>
                         <i c-on:click="ask_deletion = true" class="fa-regular fa-trash-can"></i>
                     </div>
@@ -63,6 +64,7 @@ router.addRoute("#/*", {
     model: {
         recipe: null,
         ask_deletion: false,
+        show_groceries: true,
     },
 
     controller: {

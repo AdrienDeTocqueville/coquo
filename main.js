@@ -43,8 +43,7 @@ router.addRoute("#/signin", {
     },
     controller: {
         onShow: function() {
-            let signIn = document.querySelector("#firebaseui-auth-container");
-            DB.ui.start('#firebaseui-auth-container', uiConfig);
+            DB.register_auth_container("#firebaseui-auth-container");
         }
     }
 });
