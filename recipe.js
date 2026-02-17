@@ -25,7 +25,7 @@ router.addRoute("#/*", {
                     </div>
 
                     <div class="additional-actions">
-                        <i c-on:click="show_groceries = true" class="fa-solid fa-basket-shopping"></i>
+                        <i c-if="is_main_recipe(recipe)" c-on:click="show_groceries = true" class="fa-solid fa-basket-shopping"></i>
                         <i c-on:click="do_edit()" class="fa-regular fa-pen-to-square"></i>
                         <i c-on:click="ask_deletion = true" class="fa-regular fa-trash-can"></i>
                     </div>
@@ -63,13 +63,23 @@ router.addRoute("#/*", {
                     </div>
                 </div>
             </div>
+
+            <div c-if="show_groceries" c-on:click="show_groceries = false" id="modal">
+                <div class="modal-content">
+                    <h5 style="margin-top: 20px; margin-bottom: 20px">Liste de courses</h5>
+                    <hr>
+                    <ul>
+                        <li class="ingredient" c-for="i in get_grocery_list()">{{i.count}}{{i.unit}} {{i.item}}</li>
+                    </ul>
+                </div>
+            </div>
 		</div>
 	`,
     model: {
         recipes: [],
         recipes_linked: [],
         ask_deletion: false,
-        show_groceries: true,
+        show_groceries: false,
     },
 
     controller: {
@@ -79,6 +89,27 @@ router.addRoute("#/*", {
         get_count_scale: function() {
             let main_recipe = this.recipes[this.recipes.length - 1];
             return (main_recipe.count_req/main_recipe.count);
+        },
+        get_grocery_list: function() {
+            let list = new Map();
+            let main_recipe = this.recipes[this.recipes.length - 1];
+            for (let recipe of [main_recipe, this.recipes_linked].flat())
+            {
+                for (let ingredient of recipe.ingredients)
+                {
+                    if (list.has(ingredient.item))
+                    {
+                        // TODO: check unit
+                        let item = list.get(ingredient.item);
+                        item.count += parseFloat(ingredient.count);
+                    }
+                    else
+                    {
+                        list.set(ingredient.item, {count: parseFloat(ingredient.count), unit: ingredient.unit, item: ingredient.item});
+                    }
+                }
+            }
+            return [...list.values()];
         },
         do_edit: function() {
             router.goto("#/edit/" + this.recipes[this.recipes.length-1].hash);
