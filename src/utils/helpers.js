@@ -51,17 +51,6 @@ export function makeReactive(obj, key, callback)
     }
     
     defProp(obj, key, callback);
-
-    if (Array.isArray(obj[key]))
-    {
-        const originalPush = obj[key].push;
-        obj[key].push = function(...args) {
-            const oldLength = obj[key].length;
-            const result = originalPush.apply(obj[key], args);
-            callback();
-            return result;
-        };
-    }
 }
 
 /**
@@ -118,13 +107,27 @@ export function defProp(obj, key, callback, recursive = true)
  * 
  * Recursively parse obj if key references child property
  */
-export function unpack(obj, key)
+export function unpack(obj, key, aliases)
 {
     const keys = key.split('.');
 
-    if(keys.length > 1)
-        return unpack(obj[keys[0]], keys.slice(1).join('.'));
+    if (keys.length > 1)
+    {
+        key = keys.slice(1).join('.');
 
-    else
-        return {obj, key};
+        if (aliases != null)
+        {
+            for (let alias of aliases)
+            {
+                if (alias.names.indexOf(keys[0]) != -1)
+                {
+                    return unpack(alias.container[alias.value], key);
+                }
+            }
+        }
+
+        return unpack(obj[keys[0]], key);
+    }
+
+    return {obj, key};
 }

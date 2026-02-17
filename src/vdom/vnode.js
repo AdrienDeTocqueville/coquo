@@ -10,9 +10,10 @@ export class VNode
         this.watched = watched;
         this.listeners = listeners;
         this.attributes = attributes;
+        this.aliases = [];
 
         this.children = children;
-        
+
         this.component = component;
         this.el = undefined;
     }
@@ -31,17 +32,17 @@ export class VNode
 
             let initializer = new Function("with(this){ " + this.inits + ";}");
             initializer.bind(c)();
-            
+
             c._show();
         }
         else {
             this.el = document.createElement(this.tagName);
-          
+
             this.setModel();
             this.setWatchers();
             this.setListeners();
             this.setAttributes();
-            
+
             this.children.forEach(child => {
                 child.createElement();
                 this.el.appendChild(child.el);
@@ -49,21 +50,40 @@ export class VNode
         }
     }
 
-    setModel()
+    setModel(old_node)
     {
         if (this.model)
         {
             let input = this.el;
-            let params = unpack(this.component, this.model.var);
+            let params = unpack(this.component, this.model.var, this.aliases);
             let p = Object.getOwnPropertyDescriptor(params.obj, params.key);
 
-            this.el.addEventListener(this.model.on, function(){params.obj[params.key] = this.value}); // NOTE: creates view - model - view update
-            defProp(this.component, this.model.var, function(){input.value=params.obj[params.key]}, false);
+            this.model.target = params.obj;
+            this.model.listener = function() {
+                params.obj[params.key] = this.value;
+            };
+
+            let is_valid = (old_node &&
+                old_node.model.target === this.model.target &&
+                old_node.model.on == this.model.on);
+
+            if (!is_valid)
+            {
+                if (old_node)
+                {
+                    input.removeEventListener(old_node.model.on, old_node.model.listener);
+                    // TODO: find a way to undo the defProp call
+                }
+
+                // NOTE: creates view - model - view update
+                input.addEventListener(this.model.on, this.model.listener);
+                defProp(params.obj, params.key, function(){input.value=params.obj[params.key]}, false);
+            }
 
             input.value = p.get(); // initialize view
         }
     }
-    
+
     setWatchers()
     {
         if (this.watched)
@@ -73,7 +93,7 @@ export class VNode
                 defProp(this.component, prop, function(){component._update()}, false);
         }
     }
-    
+
     setListeners()
     {
         for (let event in this.listeners)

@@ -33,9 +33,10 @@ function genElement(elem)
 
     if (elem.for)
     {
+        let aliases = genAliases(elem);
         generator = `_l(${elem.for},` +
-                    `function(${elem.alias})` +
-                    `{return ${generator};})`;
+                    `function($value,${elem.alias})` +
+                    `{return _f(${generator},{names:${aliases},container:${elem.for},value:$value})})`;
     }
 
     return generator;
@@ -64,7 +65,12 @@ function genInits(elem)
 
 function genModel(elem)
 {
-    return elem.model ? `,model:{on:'${elem.model.on}',var:'${elem.model.var}',f:function(){${elem.model.var}=this.value}}` : ``;
+    return elem.model ? `,model:{on:'${elem.model.on}',var:'${elem.model.var}'}` : ``;
+}
+
+function genAliases(elem)
+{
+    return elem.for? `[${ elem.alias.split(",").map(a => '"' + a + '"').join(",") }]`: '';
 }
 
 function genWatched(elem)

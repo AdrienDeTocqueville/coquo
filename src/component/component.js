@@ -1,5 +1,5 @@
 import {updateDOM} from '../vdom/index.js'
-import {_c, _e, _t, _l} from '../renderer/index.js'
+import {_c, _e, _t, _l, _f} from '../renderer/index.js'
 import {makeReactive, extend} from '../utils/index.js';
 
 
@@ -21,6 +21,7 @@ export default class Component
         this._e = _e;
         this._t = _t;
         this._l = _l;
+        this._f = _f;
         
 
         extend(this, model);
@@ -90,7 +91,7 @@ export default class Component
         }
         catch (e)
         {
-            console.error("circular: Property or method", e.message, e);
+            console.error("circular: ", e);
         }
     }
 }

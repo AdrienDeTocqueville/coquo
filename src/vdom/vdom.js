@@ -18,6 +18,7 @@ export default function updateDOM(nvnode, ovnode, parent)
     }
     else {
         nvnode.el = ovnode.el;
+        nvnode.setModel(ovnode);
 
         if (nvnode.children)
         {

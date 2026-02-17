@@ -18,7 +18,7 @@ export function _c(params)
         return createComponent(factory, this, params.inits);
 
     else
-        return new VNode(params.tag, params.model, params.watched, params.listeners, params.attributes, [].concat.apply([], params.children), this);
+        return new VNode(params.tag, params.model, params.watched, params.listeners, params.attributes, params.children.flat(), this);
 }
 
 export function _e()
@@ -41,7 +41,7 @@ export function _l(container, generator)
         elems = new Array(container);
 
         for (i = 0; i < container; i++)
-            elems[i] = generator(i)
+            elems[i] = generator(i, i)
     }
 
     // array loop
@@ -51,7 +51,7 @@ export function _l(container, generator)
         elems = new Array(l);
 
         for (i = 0; i < l; i++)
-            elems[i] = generator(container[i], i)
+            elems[i] = generator(i, container[i], i)
       }
 
     // object loop
@@ -64,9 +64,18 @@ export function _l(container, generator)
         for (i = 0; i < l; i++)
         {
             let key = keys[i];
-            elems[i] = generator(container[key], key, i);
+            elems[i] = generator(key, container[key], key, i);
         }
     }
 
     return elems;
+}
+
+export function _f(node, alias)
+{
+    node.aliases.push(alias);
+    if (node.children)
+        Array.prototype.forEach.call(node.children, child => { _f(child, alias); });
+
+    return node;
 }
