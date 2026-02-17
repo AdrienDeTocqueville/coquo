@@ -94,13 +94,16 @@ hr
 }
 
 /* Recipe Container */
+.recipe-group {
+    max-width: 75% !important;
+}
+
 .recipe-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, 220px);
     grid-gap: 20px 40px;
-    justify-content: center;
+    justify-content: left;
 
-    width: 75%;
     margin: 50px auto 100px;
 }
 
@@ -299,9 +302,13 @@ button[type="submit"] {
 }
 
 .additional-actions i {
-  cursor: pointer;
-  transition: color 0.2s, transform 0.2s;
-  margin: 15px;
+    cursor: pointer;
+    margin: 15px;
+}
+
+.ingredient i {
+    cursor: pointer;
+    margin-left: 5px;
 }
 
 .steps li {

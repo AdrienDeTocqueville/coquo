@@ -28,6 +28,9 @@ export class VNode
         else if (this.factory) {
             let c = this.factory.create(this.parent);
             this.el = c.$vroot.el;
+
+            let initializer = new Function("with(this){ " + this.inits + ";}");
+            initializer.bind(c)();
             
             c._show();
         }
@@ -84,11 +87,12 @@ export class VNode
     }
 }
 
-export function createComponent(factory, parent)
+export function createComponent(factory, parent, inits)
 {
     let vnode = new VNode(undefined, undefined, undefined);
     vnode.factory = factory;
     vnode.parent = parent;
+    vnode.inits = inits;
 
     return vnode;
 }

@@ -18,7 +18,8 @@ export let app = new App({
     selector: "coquo",
     view: "<router> </router>",
     model: {
-        TAGS: ["Tarte", "Patisserie", "Gateau", "Pâte"],
+        TAGS: ["Pâte", "Crème", "Gâteau", "Tarte", "Pâtisserie"],
+        TAGS_PLURAL: ["Pâtes", "Crèmes", "Gâteaux", "Tartes", "Pâtisseries"],
         UNITS: ["g", "kg", "mL", "L", "personnes"],
     }
 });

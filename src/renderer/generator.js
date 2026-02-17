@@ -16,6 +16,7 @@ function genElement(elem)
 {
     let tag = genTag(elem);
 
+    let inits = genInits(elem);
     let model = genModel(elem);
     let watched = genWatched(elem);
     let listeners = genListeners(elem);
@@ -23,7 +24,7 @@ function genElement(elem)
 
     let children = genChildren(elem);
 
-    let generator = `_c({${tag}${model}${watched}${listeners}${attributes}${children}})`;
+    let generator = `_c({${tag}${inits}${model}${watched}${listeners}${attributes}${children}})`;
 
     if (elem.if)
     {
@@ -53,6 +54,12 @@ function genTextNode(elem)
 function genTag(elem)
 {
     return `tag: '${ elem.tag }'`;
+}
+
+function genInits(elem)
+{
+    let inits = elem.inits.map( init => `${init.arg}=${init.val}` );
+    return inits.length? `,inits:'${ inits.join(';') }'`: '';
 }
 
 function genModel(elem)

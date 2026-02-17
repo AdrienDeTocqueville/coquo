@@ -61,7 +61,7 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
                         <i style="cursor: pointer" c-on:click="delete_link(link);" class="fa-regular fa-trash-can"></i>
                     </div>
 
-                    <textarea c-model="ingredients" id="ingredients" placeholder="List each ingredient on a new line" rows="3" required></textarea>
+                    <textarea c-model="ingredients" id="ingredients" placeholder="List each ingredient on a new line" rows="6" required></textarea>
                 </div>
             </div>
 
@@ -336,7 +336,7 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
                 let hash = router.params[2];
                 DB.get_recipe(hash).then((result) => {
                     this.name = result.desc.name;
-                    this.tags = result.desc.tags;
+                    this.tags = result.desc.tags.filter(tag => this.$parent.TAGS.indexOf(tag) != -1);
                     this.cooking_time = result.recipe.cooking_time;
                     this.prep_time = result.recipe.prep_time;
                     this.count = result.recipe.count;

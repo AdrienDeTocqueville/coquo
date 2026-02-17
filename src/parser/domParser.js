@@ -52,6 +52,7 @@ function createASTElement(tag, attribs)
 
         watching: [],
         bindings: [],
+        inits: [],
         on: {},
     }
 
@@ -77,6 +78,7 @@ function processDirective(element, directive)
         "model": parseModel,
         "watch": parseWatch,
         "bind": parseBind,
+        "init": parseInit,
         "for": parseFor,
         "on": parseOn,
         "if": parseIf
@@ -107,6 +109,11 @@ function parseWatch(el, arg, val)
 function parseBind(el, arg, val)
 {
     el.bindings.push({arg, val});
+}
+
+function parseInit(el, arg, val)
+{
+    el.inits.push({arg, val})
 }
 
 function parseFor(el, arg, val)

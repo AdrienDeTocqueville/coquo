@@ -18,7 +18,7 @@ router.addRoute("#/*", {
                         </div>
 
                         <div class="additional-item" style="margin-left: auto">
-                            <input id="count" style="width: 80px" type="number" min="1" c-model="recipe.count_req">
+                            <input id="count" style="width: 80px" type="number" min="1" c-model:change="recipe.count_req">
                             <span>{{recipe.unit}}</span>
                         </div>
                     </div>
@@ -34,7 +34,10 @@ router.addRoute("#/*", {
 
                 <h6>Ingrédients</h6>
                 <ul>
-                    <li class="ingredient" c-for="l in recipe.recipe_links">{{l.count * (recipe.count_req/recipe.count)}}{{l.unit}} <a c-bind:href="'#/'+l.hash">{{l.name}}</a></li>
+                    <li class="ingredient" c-for="l in recipe.recipe_links">{{l.count * (recipe.count_req/recipe.count)}}{{l.unit}}
+                        <a c-bind:href="'#/'+l.hash">{{l.name}}</a>
+                        <a c-bind:href="'#/'+l.hash"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                    </li>
                     <li class="ingredient" c-for="i in recipe.ingredients">{{i.count * (recipe.count_req/recipe.count)}}{{i.unit}} {{i.item}}</li>
                 </ul>
 

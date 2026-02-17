@@ -15,7 +15,7 @@ export function _c(params)
     let factory = this.$factories[params.tag];
     
     if (factory)
-        return createComponent(factory, this);
+        return createComponent(factory, this, params.inits);
 
     else
         return new VNode(params.tag, params.model, params.watched, params.listeners, params.attributes, [].concat.apply([], params.children), this);
