@@ -71,10 +71,27 @@ var DB = {
     },
 
     logout: function() {
+        console.log("Signing out");
         auth.signOut();
     },
 
-    load_descriptors: function() {
+    get_descriptor: function(hash) {
+        if (DB.descriptors != null)
+        {
+            return new Promise((resolve) => { resolve(DB.descriptors.find(desc => desc.hash == hash)); });
+        }
+
+        return db.collection("descriptors").doc(hash).get()
+            .then((doc) => {
+                if (!doc.exists)
+                    throw new Error("Descriptor not found");
+                let desc = doc.data()
+                desc.hash = doc.id;
+                return desc;
+            })
+    },
+
+    get_descriptors: function() {
         if (DB.descriptors != null)
         {
             return new Promise((resolve) => { resolve(DB.descriptors); });
@@ -99,33 +116,27 @@ var DB = {
 
     get_recipe: function(hash) {
         let desc, recipe;
-        return db.collection("descriptors").doc(hash).get()
+        return DB.get_descriptor(hash)
             .then((doc) => {
-                if (!doc.exists)
-                    throw new Error("Descriptor not found");
-                desc = doc.data();
+                desc = doc;
             })
             .then(() => db.collection("recipes").doc(hash).get())
             .then((doc) => {
                 if (!doc.exists)
                     throw new Error("Recipe not found");
                 recipe = doc.data();
-
-                // TODO: This sanitizes data during dev
-                // Should probably be removed once test data is removed
-                if (recipe.recipe_links == undefined)
-                    recipe.recipe_links = [];
-
-                for (let step of recipe.steps)
-                {
-                    if (step.notes == undefined)
-                        step.notes = []
-                }
             })
             .then(() => { return { desc, recipe }; })
             .catch((error) => {
                 console.error("Error getting recipe (TODO: stale descriptor, erase it):", error);
             });
+    },
+
+    get_recipes: function(hashes) {
+
+        return db.collection("recipes")
+            .where(firebase.firestore.FieldPath.documentId(), "in", hashes)
+            .get()
     },
 
     set_recipe: function(hash, desc, recipe) {

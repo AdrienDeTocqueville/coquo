@@ -228,6 +228,10 @@ hr
     }
 }
 
+.link {
+    cursor: pointer;
+}
+
 .recipe-form h2 {
     display: block;
     font-weight: bold;

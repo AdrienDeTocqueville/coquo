@@ -1,6 +1,5 @@
 import { app, router } from './main.js'
 
-let observer = null;
 router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
 	view: `
         <div class="container">
@@ -51,10 +50,10 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
                 <div class="ingredient-list">
                     <div c-for="link in recipe_links" class="recipe-link">
 
-                        <input c-on:input="handle_count(link)" class="link-count" style="width: 150px" type="number" placeholder="Quantité" min="1" required>
+                        <input c-model="link.count" style="width: 150px" type="number" placeholder="Quantité" min="1" required>
 
                         <div style="position: relative; width: 100%">
-                            <input c-on:input="handle_link(link)" class="link-hash" type="text" placeholder="Recette..." required>
+                            <input c-model="link.name" c-on:input="handle_link(link)" class="link-hash" type="text" placeholder="Recette..." required>
                             <ul class="suggestions"></ul>
                         </div>
 
@@ -124,10 +123,9 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
             links.splice(this.find_link(link), 1);
             this.recipe_links = links;
         },
-        handle_count: function(link) {
-            const input = document.activeElement;
-            let idx = this.find_link(link);
-            this.recipe_links[idx].count = input.value;
+        normalize_string: function(str) {
+            // Removes accents
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         },
         handle_link: function(link) {
             if (this.filtering) return;
@@ -136,7 +134,7 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
             const input = document.activeElement;
             const suggestions = input.nextSibling;
 
-            const value = input.value.toLowerCase();
+            const value = this.normalize_string(input.value);
             suggestions.innerHTML = "";
 
             if (!value) {
@@ -145,9 +143,9 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
                 return;
             }
 
-            DB.load_descriptors().then((descriptors) => {
+            DB.get_descriptors().then((descriptors) => {
 
-                const filtered = descriptors.filter(item => item.name.toLowerCase().includes(value));
+                const filtered = descriptors.filter(item => this.normalize_string(item.name).includes(value));
 
                 if (filtered.length === 0) {
                     suggestions.style.display = "none";
@@ -196,12 +194,14 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
                 tags: this.tags
             };
 
+            const recipe_links = this.recipe_links.map(({ name, ...rest }) => rest);
+
             let recipe = {
                 count: this.count,
                 unit: this.unit,
                 cooking_time: this.cooking_time,
                 prep_time: this.prep_time,
-                recipe_links: this.recipe_links,
+                recipe_links: recipe_links,
                 ingredients: this.parse_ingredients(),
                 steps: this.parse_steps(),
             }
@@ -335,6 +335,10 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
             {
                 let hash = router.params[2];
                 DB.get_recipe(hash).then((result) => {
+
+                    for (let i = 0; i < result.recipe.recipe_links.length; i++)
+                        result.recipe.recipe_links[i].name = "";
+
                     this.name = result.desc.name;
                     this.tags = result.desc.tags.filter(tag => this.$parent.TAGS.indexOf(tag) != -1);
                     this.cooking_time = result.recipe.cooking_time;
@@ -347,40 +351,17 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
                     this.submit_text = "Sauvegarder les modifications";
                     this.current_hash = hash;
                     document.title = "Modifier la Recette";
+
+                    return DB.get_descriptors();
                 })
-                .then(() => {
-                    if (observer == null)
+                .then((descriptors) => {
+                    for (let i = 0; i < this.recipe_links.length; i++)
                     {
-                        let target = document.querySelector(".ingredient-list");
-
-                        observer = new MutationObserver((mut, obs) => {
-
-                            let counts = target.querySelectorAll(".link-count");
-                            let hashes = target.querySelectorAll(".link-hash");
-
-                            for (let i = 0; i < counts.length; i++)
-                                counts[i].value = this.recipe_links[i].count;
-
-                            DB.load_descriptors().then((descriptors) => {
-                                for (let i = 0; i < hashes.length; i++)
-                                {
-                                    let recipe = descriptors.find(r => r.hash == this.recipe_links[i].hash);
-                                    if (recipe != null)
-                                        hashes[i].value = recipe.name;
-                                }
-                            });
-                        });
-                        observer.observe(target, { childList: true, subtree: true });
+                        let recipe = descriptors.find(r => r.hash == this.recipe_links[i].hash);
+                        if (recipe != null)
+                            this.recipe_links[i].name = recipe.name;
                     }
                 });
-            }
-        },
-
-        onHide: function() {
-            if (observer != null)
-            {
-                observer.disconnect();
-                observer = null;
             }
         }
     }

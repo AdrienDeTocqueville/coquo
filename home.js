@@ -48,7 +48,7 @@ router.addRoute("#/home", {
                     return '#/' + recipe.hash;
                 },
                 onShow: function() {
-                    DB.load_descriptors().then((descriptors) => {
+                    DB.get_descriptors().then((descriptors) => {
                         this.recipes = descriptors.filter(desc => desc.tags.indexOf(this.tag) != -1);
                     });
                 }
