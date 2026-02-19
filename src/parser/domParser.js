@@ -11,7 +11,7 @@ export function domFromString(string)
 
 
 /**
- * 
+ *
  * @param {DOMElement} element
  */
 export function parseDOM(element)
@@ -37,10 +37,9 @@ export function parseDOM(element)
 
 
 /**
- * 
- * @param {string} tag 
- * @param {array} attribs 
- * @param {ASTElement} parent 
+ *
+ * @param {string} tag
+ * @param {array} attribs
  */
 function createASTElement(tag, attribs)
 {
@@ -120,7 +119,7 @@ function parseFor(el, arg, val)
 {
     let reg = /([^]*?)\s+(?:in|of)\s+([^]*)/;
     let matches = val.match(reg);
-    
+
     el.for = matches[2].trim();
     el.alias = matches[1].trim();
 }

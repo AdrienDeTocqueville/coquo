@@ -10,7 +10,6 @@ export class VNode
         this.watched = watched;
         this.listeners = listeners;
         this.attributes = attributes;
-        this.aliases = [];
 
         this.children = children;
 
@@ -55,32 +54,85 @@ export class VNode
         if (this.model)
         {
             let input = this.el;
-            let params = unpack(this.component, this.model.var, this.aliases);
+            let params = unpack(this.component, this.model.var, this.model.aliases);
             let p = Object.getOwnPropertyDescriptor(params.obj, params.key);
 
             this.model.target = params.obj;
-            this.model.listener = function() {
-                params.obj[params.key] = this.value;
-            };
 
             let is_valid = (old_node &&
                 old_node.model.target === this.model.target &&
                 old_node.model.on == this.model.on);
 
-            if (!is_valid)
+            if (is_valid)
+            {
+                this.model.listener = old_node.model.listener;
+                this.model.old_props = old_node.model.old_props;
+            }
+            else
             {
                 if (old_node)
                 {
                     input.removeEventListener(old_node.model.on, old_node.model.listener);
-                    // TODO: find a way to undo the defProp call
+                    if (old_node.model.old_props.getter && old_node.model.old_props.setter)
+                    {
+                        Object.defineProperty(old_node.model.target, params.key, {
+                            enumerable: true,
+                            configurable: true,
+
+                            get: old_node.model.old_props.getter,
+                            set: old_node.model.old_props.eetter,
+                        });
+                    }
+                    else
+                    {
+                        Object.defineProperty(old_node.model.target, params.key, {
+                            enumerable: true,
+                            configurable: true,
+                            writable: true,
+                            value: old_node.model.target[params.key]
+                        });
+                    }
                 }
 
-                // NOTE: creates view - model - view update
-                input.addEventListener(this.model.on, this.model.listener);
-                defProp(params.obj, params.key, function(){input.value=params.obj[params.key]}, false);
-            }
+                const property = Object.getOwnPropertyDescriptor(params.obj, params.key);
+                if (property.configurable)
+                {
+                    let getter = property.get;
+                    let setter = property.set;
+                    if (!getter || !setter)
+                        var val = params.obj[params.key];
 
-            input.value = p.get(); // initialize view
+                    let new_get = getter || function() { return val; };
+                    let new_set = function reactiveSet(newVal) {
+                        if (setter)
+                            setter(newVal);
+                        else
+                            val = newVal;
+
+                        input.value = newVal;
+                    }
+
+                    Object.defineProperty(params.obj, params.key, {
+                        enumerable: true,
+                        configurable: true,
+
+                        get: new_get,
+                        set: new_set,
+                    });
+
+                    this.model.old_props = { getter, setter };
+                    this.model.listener = function(e) {
+                        if (setter)
+                            setter(this.value);
+                        else
+                            val = this.value;
+                    };
+
+                    input.addEventListener(this.model.on, this.model.listener);
+                    input.value = new_get(); // initialize view
+                }
+
+            }
         }
     }
 

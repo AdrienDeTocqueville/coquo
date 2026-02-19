@@ -75,28 +75,28 @@ export function defProp(obj, key, callback, recursive = true)
     if (!getter || !setter)
         var val = obj[key];
 
+    let new_get = getter || function() { return val; };
+    let new_set = function reactiveSet(newVal) {
+        if (setter)
+            setter(newVal);
+        else
+            val = newVal;
+
+        if (recursive && isObject(newVal))
+        {
+            for (var childKey in newVal)
+                makeReactive(newVal, childKey, callback);
+        }
+
+        callback();
+    }
+
     Object.defineProperty(params.obj, params.key, {
         enumerable: true,
         configurable: true,
 
-        get: function reactiveGet() {
-            return getter ? getter.call(obj): val;
-        },
-        
-        set: function reactiveSet(newVal) {
-            if (setter)
-                setter.call(obj, newVal);
-            else
-                val = newVal;
-
-            if (recursive && isObject(newVal))
-            {
-                for (var childKey in newVal)
-                    makeReactive(newVal, childKey, callback);
-            }
-
-            callback();
-        }
+        get: new_get,
+        set: new_set,
     });
 }
 

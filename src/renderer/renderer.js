@@ -73,7 +73,11 @@ export function _l(container, generator)
 
 export function _f(node, alias)
 {
-    node.aliases.push(alias);
+    if (node.model != null)
+    {
+        node.model.aliases = node.model.aliases || [];
+        node.model.aliases.push(alias);
+    }
     if (node.children)
         Array.prototype.forEach.call(node.children, child => { _f(child, alias); });
 
