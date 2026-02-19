@@ -19,13 +19,13 @@ router.addRoute("#/*", {
 
                         <div class="additional-item" style="margin-left: auto">
                             <input c-if="is_main_recipe(recipe)" style="width: 80px" type="number" min="1" c-model:change="recipe.count_req">
-                            <span c-if="!is_main_recipe(recipe)">{{recipe.count_req * get_count_scale()}}</span>
+                            <span c-if="!is_main_recipe(recipe)">{{recipe.count * get_count_scale(recipe)}}</span>
                             <span>{{recipe.unit}}</span>
                         </div>
                     </div>
 
-                    <div class="additional-actions">
-                        <i c-if="is_main_recipe(recipe)" c-on:click="show_groceries = true" class="fa-solid fa-basket-shopping"></i>
+                    <div c-if="is_main_recipe(recipe)" class="additional-actions">
+                        <i c-on:click="show_groceries = true" class="fa-solid fa-basket-shopping"></i>
                         <i c-on:click="do_edit()" class="fa-regular fa-pen-to-square"></i>
                         <i c-on:click="ask_deletion = true" class="fa-regular fa-trash-can"></i>
                     </div>
@@ -35,11 +35,11 @@ router.addRoute("#/*", {
 
                 <h6>Ingrédients</h6>
                 <ul>
-                    <li class="ingredient" c-for="l in recipe.recipe_links">{{l.count * get_count_scale()}}{{l.unit}}
+                    <li class="ingredient" c-for="l in recipe.recipe_links">{{l.count * get_count_scale(recipe)}}{{l.unit}}
                         <a c-on:click="inline_recipe(l)" class="link">{{l.name}}</a>
                         <a c-bind:href="'#/'+l.hash"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
                     </li>
-                    <li class="ingredient" c-for="i in recipe.ingredients">{{i.count * get_count_scale()}}{{i.unit}} {{i.item}}</li>
+                    <li class="ingredient" c-for="i in recipe.ingredients">{{i.count * get_count_scale(recipe)}}{{i.unit}} {{i.item}}</li>
                 </ul>
 
                 <h6>Étapes</h6>
@@ -86,9 +86,12 @@ router.addRoute("#/*", {
         is_main_recipe: function(recipe) {
             return recipe === this.recipes[this.recipes.length - 1];
         },
-        get_count_scale: function() {
+        get_count_scale: function(recipe) {
             let main_recipe = this.recipes[this.recipes.length - 1];
-            return (main_recipe.count_req/main_recipe.count);
+            let scale = (main_recipe.count_req/main_recipe.count);
+            if (recipe != main_recipe)
+                scale *= (recipe.count_req/recipe.count);
+            return scale;
         },
         get_grocery_list: function() {
             let list = new Map();

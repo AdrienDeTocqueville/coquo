@@ -8,6 +8,7 @@ router.addRoute("#/home", {
             <recipeList c-init:tag="$parent.$parent.TAGS[4]"></recipeList>
             <recipeList c-init:tag="$parent.$parent.TAGS[3]"></recipeList>
             <recipeList c-init:tag="$parent.$parent.TAGS[1]"></recipeList>
+            <recipeList c-init:tag="null"></recipeList>
 
             <button class="big-button floating-btn" id="new-recipe" c-on:click="$router.goto('#/new-recipe')">
                 <i class="fa-solid fa-plus"></i> Nouvelle Recette
@@ -23,7 +24,7 @@ router.addRoute("#/home", {
     components: {
         recipeList: {
             view: `
-                <div>
+                <div c-if="recipes.length != 0">
                     <h2>{{get_plural(tag)}}</h2>
                     <div class="recipe-container">
                         <a c-for="r in recipes" class="recipe-card" c-bind:href="get_url(r)">
@@ -42,14 +43,20 @@ router.addRoute("#/home", {
             controller: {
                 get_plural: function(tag) {
                     let r = this.$parent.$parent;
-                    return r.TAGS_PLURAL[r.TAGS.indexOf(tag)];
+                    let idx = r.TAGS.indexOf(tag);
+                    return idx != -1 ? r.TAGS_PLURAL[idx] : "Sans catégorie";
                 },
                 get_url: function(recipe) {
                     return '#/' + recipe.hash;
                 },
                 onShow: function() {
                     DB.get_descriptors().then((descriptors) => {
-                        this.recipes = descriptors.filter(desc => desc.tags.indexOf(this.tag) != -1);
+                        this.recipes = descriptors.filter(desc => {
+                            if (this.tag)
+                                return desc.tags.indexOf(this.tag) != -1;
+                            else
+                                return desc.tags.length == 0;
+                        });
                     });
                 }
             },
