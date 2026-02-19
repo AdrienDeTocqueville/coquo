@@ -48,6 +48,19 @@ export default class Component
             node.parentNode.replaceChild(this.$vroot.el, node);
 
         this.onShow && this.onShow();
+
+        if (this.$vroot && this.$vroot.children)
+        {
+            let onShowChildren = function(vnode) {
+                vnode.children.forEach(child => {
+                    if (child.factory != null)
+                        child.component._show();
+                    else if (child.children)
+                        onShowChildren(child);
+                });
+            }
+            onShowChildren(this.$vroot);
+        }
     }
 
     _hide(node)

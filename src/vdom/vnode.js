@@ -6,12 +6,12 @@ export class VNode
     {
         this.tagName = tagName;
 
-        this.model = model;
-        this.watched = watched;
-        this.listeners = listeners;
-        this.attributes = attributes;
+        if (model) this.model = model;
+        if (watched) this.watched = watched;
+        if (listeners) this.listeners = listeners;
+        if (attributes) this.attributes = attributes;
 
-        this.children = children;
+        if (children) this.children = children;
 
         this.component = component;
         this.el = undefined;
@@ -26,13 +26,13 @@ export class VNode
             this.el = document.createComment("c-if node");
         }
         else if (this.factory) {
-            let c = this.factory.create(this.parent);
-            this.el = c.$vroot.el;
+            this.component = this.factory.create(this.parent);
+            this.el = this.component.$vroot.el;
 
             let initializer = new Function("with(this){ " + this.inits + ";}");
-            initializer.bind(c)();
+            initializer.bind(this.component)();
 
-            c._show();
+            this.component._show();
         }
         else {
             this.el = document.createElement(this.tagName);
