@@ -20,7 +20,15 @@ export let app = new App({
     model: {
         TAGS: ["Pâte", "Crème", "Gâteau", "Tarte", "Pâtisserie"],
         TAGS_PLURAL: ["Pâtes", "Crèmes", "Gâteaux", "Tartes", "Pâtisseries"],
-        UNITS: ["g", "kg", "mL", "L", "personnes"],
+        UNITS: ["g", "kg", "mL", "cL", "L", "cm", "personnes"],
+    },
+    controller: {
+        format_ingredient: function(ingredient, scale = 1) {
+            if (ingredient.count != 0)
+                return `${ingredient.count * scale}${ingredient.unit} ${ingredient.item}`;
+            else
+                return ingredient.item;
+        },
     }
 });
 

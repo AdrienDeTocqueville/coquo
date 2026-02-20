@@ -243,18 +243,31 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
             let lines = this.ingredients.split("\n");
             for (let i = 0; i < lines.length; i++)
             {
-                let lead = this.extract_leading_number(lines[i]);
-                if (lead == null) continue;
+                if (lines[i].trim().length == 0)
+                    continue;
 
+                let lead = this.extract_leading_number(lines[i]);
+                if (lead == null)
+                {
+                    result.push({ count: 0, unit: "", item: lines[i] });
+                    continue;
+                }
+
+                let unit = "";
+                let item = lead.rest;
                 const spaceIndex = lead.rest.indexOf(" ");
-                if (spaceIndex === -1) { // No unit
-                    result.push({ count: lead.count, unit: "", item: lead.rest });
+                if (spaceIndex != -1)
+                {
+                    let name = lead.rest.slice(0, spaceIndex);
+                    let unitIndex = this.$parent.UNITS.findIndex(u => u.toLowerCase() == name.toLowerCase());
+                    if (unitIndex != -1)
+                    {
+                        unit = this.$parent.UNITS[unitIndex];
+                        item = lead.rest.substr(spaceIndex).trim();
+                    }
                 }
-                else {
-                    let unit = lead.rest.slice(0, spaceIndex);
-                    let item = lead.rest.substr(spaceIndex).trim();
-                    result.push({ count: lead.count, unit: unit, item: item });
-                }
+
+                result.push({ count: lead.count, unit: unit, item: item });
             }
             return result;
         },
@@ -262,7 +275,7 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
         unparse_ingredients: function(ingredients) {
             let result = "";
             for (let ingredient of ingredients)
-                result += ingredient.count + ingredient.unit + " " + ingredient.item + "\n";
+                result += this.$parent.format_ingredient(ingredient) + "\n";
             return result;
 
         },
@@ -274,6 +287,9 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
             let result = [];
             for (let i = 0; i < lines.length; i++)
             {
+                if (lines[i].trim().length == 0)
+                    continue;
+
                 let notes = [];
                 while (true)
                 {

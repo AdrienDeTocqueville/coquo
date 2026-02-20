@@ -39,7 +39,7 @@ router.addRoute("#/*", {
                         <a c-on:click="inline_recipe(l)" class="link">{{l.name}}</a>
                         <a c-bind:href="'#/'+l.hash"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
                     </li>
-                    <li class="ingredient" c-for="i in recipe.ingredients">{{i.count * get_count_scale(recipe)}}{{i.unit}} {{i.item}}</li>
+                    <li class="ingredient" c-for="i in recipe.ingredients">{{$parent.format_ingredient(i, get_count_scale(recipe))}}</li>
                 </ul>
 
                 <h6>Étapes</h6>
@@ -69,7 +69,7 @@ router.addRoute("#/*", {
                     <h5 style="margin-top: 20px; margin-bottom: 20px">Liste de courses</h5>
                     <hr>
                     <ul>
-                        <li class="ingredient" c-for="i in get_grocery_list()">{{i.count}}{{i.unit}} {{i.item}}</li>
+                        <li class="ingredient" c-for="ingredient in get_grocery_list()">{{ingredient}}</li>
                     </ul>
                 </div>
             </div>
@@ -93,6 +93,31 @@ router.addRoute("#/*", {
                 scale *= (recipe.count_req/recipe.count);
             return scale;
         },
+        convert_to_base_unit: function(ingredient) {
+            if (ingredient.unit == "L")
+                return {count: ingredient.count * 1000, unit: "mL", item: ingredient.item};
+            if (ingredient.unit == "cL")
+                return {count: ingredient.count * 10, unit: "mL", item: ingredient.item};
+            if (ingredient.unit == "kg")
+                return {count: ingredient.count * 1000, unit: "g", item: ingredient.item};
+            return ingredient;
+        },
+        convert_to_best_unit: function(ingredient) {
+            if (ingredient.unit == "mL")
+            {
+                if (ingredient.count >= 1000)
+                    return {count: ingredient.count / 1000, unit: "L", item: ingredient.item};
+                if (ingredient.count >= 100)
+                    return {count: ingredient.count / 10, unit: "cL", item: ingredient.item};
+            }
+            else if (ingredient.unit == "g")
+            {
+                if (ingredient.count >= 1000)
+                    return {count: ingredient.count / 1000, unit: "kg", item: ingredient.item};
+                return ingredient
+            }
+            return ingredient;
+        },
         get_grocery_list: function() {
             let list = new Map();
             let main_recipe = this.recipes[this.recipes.length - 1];
@@ -100,9 +125,9 @@ router.addRoute("#/*", {
             {
                 for (let ingredient of recipe.ingredients)
                 {
+                    ingredient = this.convert_to_base_unit(ingredient);
                     if (list.has(ingredient.item))
                     {
-                        // TODO: check unit
                         let item = list.get(ingredient.item);
                         item.count += parseFloat(ingredient.count);
                     }
@@ -112,7 +137,9 @@ router.addRoute("#/*", {
                     }
                 }
             }
-            return [...list.values()];
+            return [...list.values()]
+                .map(x => this.convert_to_best_unit(x))
+                .map(x => this.$parent.format_ingredient(x));
         },
         do_edit: function() {
             router.goto("#/edit/" + this.recipes[this.recipes.length-1].hash);
