@@ -114,29 +114,37 @@ var DB = {
             });
     },
 
+    _fixup_recipe: function(descriptors, hash, recipe) {
+        let desc = descriptors.find(desc => desc.hash == hash);
+        recipe.name = desc.name;
+        recipe.tags = desc.tags;
+        recipe.hash = hash;
+        return recipe;
+    },
+
     get_recipe: function(hash) {
-        let desc, recipe;
-        return DB.get_descriptor(hash)
-            .then((doc) => {
-                desc = doc;
-            })
+
+       return DB.get_descriptors()
             .then(() => db.collection("recipes").doc(hash).get())
             .then((doc) => {
                 if (!doc.exists)
                     throw new Error("Recipe not found");
-                recipe = doc.data();
+                return DB._fixup_recipe(DB.descriptors, hash, doc.data());
             })
-            .then(() => { return { desc, recipe }; })
-            .catch((error) => {
-                console.error("Error getting recipe (TODO: stale descriptor, erase it):", error);
-            });
     },
 
     get_recipes: function(hashes) {
 
-        return db.collection("recipes")
-            .where(firebase.firestore.FieldPath.documentId(), "in", hashes)
-            .get()
+       return DB.get_descriptors()
+            .then(() => db.collection("recipes")
+                .where(firebase.firestore.FieldPath.documentId(), "in", hashes)
+                .get())
+            .then(documents => {
+                if (documents == null) return;
+                return documents.docs.map(doc => {
+                    return DB._fixup_recipe(DB.descriptors, doc.id, doc.data());
+                });
+            });
     },
 
     set_recipe: function(hash, desc, recipe) {

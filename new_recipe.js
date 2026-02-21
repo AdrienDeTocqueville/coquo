@@ -195,6 +195,7 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
             };
 
             const recipe_links = this.recipe_links.map(({ name, ...rest }) => rest);
+            let parsed_steps = this.parse_steps();
 
             let recipe = {
                 count: this.count,
@@ -203,7 +204,8 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
                 prep_time: this.prep_time,
                 recipe_links: recipe_links,
                 ingredients: this.parse_ingredients(),
-                steps: this.parse_steps(),
+                steps: parsed_steps.steps,
+                description: parsed_steps.description,
             }
 
             DB.set_recipe(hash, desc, recipe)
@@ -284,7 +286,8 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
             let lines = this.steps.split("\n\n");
             lines = lines.filter((line) => line.trim().length != 0);
 
-            let result = [];
+            let description = null;
+            let steps = [];
             for (let i = 0; i < lines.length; i++)
             {
                 if (lines[i].trim().length == 0)
@@ -303,14 +306,29 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
                     lines[i] = lines[i].slice(0, note_start) + lines[i].slice(note_end + 2)
                 }
 
-                result.push({ txt: lines[i].trim(), notes });
+                let txt = lines[i].trim();
+                if (txt.length == 0)
+                {
+                    if (steps.length == 0)
+                        description = notes.join("\n");
+                    else
+                    {
+                        let prev_step = steps[steps.length - 1];
+                        prev_step.notes.push.apply(prev_step.notes, notes);
+                    }
+                }
+                else
+                    steps.push({ txt: lines[i].trim(), notes });
             }
 
-            return result;
+            return { description, steps };
         },
 
-        unparse_steps: function(steps) {
+        unparse_steps: function(steps, description) {
             let result = "";
+            if (description)
+                result += "--\n" + description + "\n--\n\n";
+
             for (let step of steps)
             {
                 result += step.txt + "\n";
@@ -350,20 +368,20 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
             if (router.params.length == 3 && router.params[1].startsWith("edit/"))
             {
                 let hash = router.params[2];
-                DB.get_recipe(hash).then((result) => {
+                DB.get_recipe(hash).then((recipe) => {
 
-                    for (let i = 0; i < result.recipe.recipe_links.length; i++)
-                        result.recipe.recipe_links[i].name = "";
+                    for (let i = 0; i < recipe.recipe_links.length; i++)
+                        recipe.recipe_links[i].name = "";
 
-                    this.name = result.desc.name;
-                    this.tags = result.desc.tags.filter(tag => this.$parent.TAGS.indexOf(tag) != -1);
-                    this.cooking_time = result.recipe.cooking_time;
-                    this.prep_time = result.recipe.prep_time;
-                    this.count = result.recipe.count;
-                    this.unit = result.recipe.unit;
-                    this.recipe_links = result.recipe.recipe_links;
-                    this.ingredients = this.unparse_ingredients(result.recipe.ingredients);
-                    this.steps = this.unparse_steps(result.recipe.steps);
+                    this.name = recipe.name;
+                    this.tags = recipe.tags.filter(tag => this.$parent.TAGS.indexOf(tag) != -1);
+                    this.cooking_time = recipe.cooking_time;
+                    this.prep_time = recipe.prep_time;
+                    this.count = recipe.count;
+                    this.unit = recipe.unit;
+                    this.recipe_links = recipe.recipe_links;
+                    this.ingredients = this.unparse_ingredients(recipe.ingredients);
+                    this.steps = this.unparse_steps(recipe.steps, recipe.description);
                     this.submit_text = "Sauvegarder les modifications";
                     this.current_hash = hash;
                     document.title = "Modifier la Recette";

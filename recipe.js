@@ -17,10 +17,14 @@ router.addRoute("#/*", {
                             <span>{{recipe.cooking_time}}</span>
                         </div>
 
-                        <div class="additional-item" style="margin-left: auto">
-                            <input c-if="is_main_recipe(recipe)" style="width: 80px" type="number" min="1" c-model:change="recipe.count_req">
-                            <span c-if="!is_main_recipe(recipe)">{{recipe.count * get_count_scale(recipe)}}</span>
+                        <div c-if="is_main_recipe(recipe)" class="additional-item" style="margin-left: auto">
+                            <input style="width: 80px" type="number" min="1" c-model:change="recipe.count_req">
                             <span>{{recipe.unit}}</span>
+                        </div>
+                        <div c-if="!is_main_recipe(recipe)" class="additional-item" style="margin-left: auto">
+                            <span>
+                                {{$parent.format_ingredient({count: recipe.count, unit: recipe.unit}, get_count_scale(recipe))}}
+                            </span>
                         </div>
                     </div>
 
@@ -33,9 +37,15 @@ router.addRoute("#/*", {
 
                 <hr>
 
+                <div c-if="recipe.description" style="margin-bottom: 1rem">
+                    <h6>Description</h6>
+                    {{recipe.description}}
+                </div>
+
                 <h6>Ingrédients</h6>
                 <ul>
-                    <li class="ingredient" c-for="l in recipe.recipe_links">{{l.count * get_count_scale(recipe)}}{{l.unit}}
+                    <li class="ingredient" c-for="l in recipe.recipe_links">
+                        {{$parent.format_ingredient(l, get_count_scale(recipe))}}
                         <a c-on:click="inline_recipe(l)" class="link">{{l.name}}</a>
                         <a c-bind:href="'#/'+l.hash"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
                     </li>
@@ -93,31 +103,6 @@ router.addRoute("#/*", {
                 scale *= (recipe.count_req/recipe.count);
             return scale;
         },
-        convert_to_base_unit: function(ingredient) {
-            if (ingredient.unit == "L")
-                return {count: ingredient.count * 1000, unit: "mL", item: ingredient.item};
-            if (ingredient.unit == "cL")
-                return {count: ingredient.count * 10, unit: "mL", item: ingredient.item};
-            if (ingredient.unit == "kg")
-                return {count: ingredient.count * 1000, unit: "g", item: ingredient.item};
-            return ingredient;
-        },
-        convert_to_best_unit: function(ingredient) {
-            if (ingredient.unit == "mL")
-            {
-                if (ingredient.count >= 1000)
-                    return {count: ingredient.count / 1000, unit: "L", item: ingredient.item};
-                if (ingredient.count >= 100)
-                    return {count: ingredient.count / 10, unit: "cL", item: ingredient.item};
-            }
-            else if (ingredient.unit == "g")
-            {
-                if (ingredient.count >= 1000)
-                    return {count: ingredient.count / 1000, unit: "kg", item: ingredient.item};
-                return ingredient
-            }
-            return ingredient;
-        },
         get_grocery_list: function() {
             let list = new Map();
             let main_recipe = this.recipes[this.recipes.length - 1];
@@ -125,7 +110,7 @@ router.addRoute("#/*", {
             {
                 for (let ingredient of recipe.ingredients)
                 {
-                    ingredient = this.convert_to_base_unit(ingredient);
+                    ingredient = this.$parent.convert_to_base_unit(ingredient);
                     if (list.has(ingredient.item))
                     {
                         let item = list.get(ingredient.item);
@@ -137,9 +122,7 @@ router.addRoute("#/*", {
                     }
                 }
             }
-            return [...list.values()]
-                .map(x => this.convert_to_best_unit(x))
-                .map(x => this.$parent.format_ingredient(x));
+            return [...list.values()].map(x => this.$parent.format_ingredient(x));
         },
         do_edit: function() {
             router.goto("#/edit/" + this.recipes[this.recipes.length-1].hash);
@@ -158,7 +141,7 @@ router.addRoute("#/*", {
             recipes.splice(this.recipes.length - 1, 0, to_insert);
             this.recipes = recipes;
         },
-        build_recipe_object: function(desc, recipe) {
+        build_recipe_object: function(recipe) {
             for (let step of recipe.steps)
             {
                 for (let i = 0; i < step.notes.length; i++)
@@ -182,9 +165,9 @@ router.addRoute("#/*", {
             }
 
             return {
-                name: desc.name,
-                hash: desc.hash,
-                tags: desc.tags,
+                name: recipe.name,
+                hash: recipe.hash,
+                tags: recipe.tags,
                 count: recipe.count,
                 count_req: recipe.count,
                 unit: recipe.unit,
@@ -192,19 +175,18 @@ router.addRoute("#/*", {
                 prep_time: recipe.prep_time,
                 recipe_links: recipe.recipe_links,
                 ingredients: recipe.ingredients,
-                steps: recipe.steps
+                steps: recipe.steps,
+                description: recipe.description,
             };
 
         },
         onShow: function() {
             let hash = this.$router.route.substr(2);
-            DB.get_recipe(hash).then((result) => {
+            DB.get_recipe(hash).then((recipe) => {
 
-                let desc = result.desc;
-                let recipe = result.recipe;
-                this.recipes = [this.build_recipe_object(desc, recipe)];
+                this.recipes = [this.build_recipe_object(recipe)];
 
-                document.title = desc.name;
+                document.title = recipe.name;
 
                 return DB.get_descriptors();
             })
@@ -223,24 +205,22 @@ router.addRoute("#/*", {
                 if (recipes.length != 0)
                     return DB.get_recipes(recipes);
             })
-            .then(snapshot => {
-                if (snapshot == null) return;
+            .then(recipes => {
+                if (recipes == null) return;
 
-                let recipes = [];
                 let main_recipe = this.recipes[this.recipes.length - 1];
-                snapshot.forEach(doc => {
-                    let desc = DB.descriptors.find(desc => desc.hash == doc.id);
-                    let recipe = this.build_recipe_object(desc, doc.data())
+                this.recipes_linked = recipes.map(recipe => {
+                    recipe = this.build_recipe_object(recipe);
 
-                    let recipe_link = main_recipe.recipe_links.find(recipe => recipe.hash == desc.hash);
+                    let recipe_link = main_recipe.recipe_links.find(linked => linked.hash == recipe.hash);
                     recipe.count_req = recipe_link.count;
                     recipe_link.unit = recipe.unit;
 
-                    recipes.push(recipe);
+                    return recipe;
                 });
-                this.recipes_linked = recipes;
             })
             .catch((error) => {
+                console.error(error);
                 // Recipe doesn't exist, redirect home
                 this.$router.goto(this.$router.defaultRoute);
             });
