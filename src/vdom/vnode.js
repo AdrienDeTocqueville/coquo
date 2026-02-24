@@ -11,7 +11,14 @@ export class VNode
         if (listeners) this.listeners = listeners;
         if (attributes) this.attributes = attributes;
 
-        if (children) this.children = children;
+        if (children && Array.isArray(children))
+            this.children = children.flat();
+        else
+        {
+            this.children = [];
+            if (typeof children == "string")
+                this.html = children;
+        }
 
         this.component = component;
         this.el = undefined;
@@ -42,10 +49,17 @@ export class VNode
             this.setListeners();
             this.setAttributes();
 
-            this.children.forEach(child => {
-                child.createElement();
-                this.el.appendChild(child.el);
-            });
+            if (this.html)
+            {
+                this.el.innerHTML = this.html;
+            }
+            else
+            {
+                this.children.forEach(child => {
+                    child.createElement();
+                    this.el.appendChild(child.el);
+                });
+            }
         }
     }
 

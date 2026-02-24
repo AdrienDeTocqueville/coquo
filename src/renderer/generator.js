@@ -97,5 +97,7 @@ function genAttributes(elem)
 
 function genChildren(elem)
 {
-    return `,children:[${ elem.children.map( child => genNode(child) ).join(',') }]`;
+    let children = elem.html ? elem.html : `[${ elem.children.map( child => genNode(child) ).join(',') }]`;
+
+    return ",children:" + children;
 }

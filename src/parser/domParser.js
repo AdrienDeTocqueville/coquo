@@ -78,6 +78,7 @@ function processDirective(element, directive)
         "watch": parseWatch,
         "bind": parseBind,
         "init": parseInit,
+        "html": parseHTML,
         "for": parseFor,
         "on": parseOn,
         "if": parseIf
@@ -113,6 +114,11 @@ function parseBind(el, arg, val)
 function parseInit(el, arg, val)
 {
     el.inits.push({arg, val})
+}
+
+function parseHTML(el, arg, val)
+{
+    el.html = val;
 }
 
 function parseFor(el, arg, val)
