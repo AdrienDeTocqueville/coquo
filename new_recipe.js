@@ -115,7 +115,7 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
         },
         add_recipe_link: function() {
             let links = this.recipe_links.slice(); // shallow copy
-            links.push({count: 1, hash: ""});
+            links.push({count: 1, hash: "", name: ""});
             this.recipe_links = links;
         },
         delete_link: function(link) {

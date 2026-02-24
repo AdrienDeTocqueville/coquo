@@ -39,7 +39,7 @@ router.addRoute("#/*", {
 
                 <div c-if="recipe.description" style="margin-bottom: 1rem">
                     <h6>Description</h6>
-                    {{recipe.description}}
+                    <div c-html="recipe.description"></div>
                 </div>
 
                 <h6>Ingrédients</h6>
@@ -55,9 +55,7 @@ router.addRoute("#/*", {
                 <h6>Étapes</h6>
                 <ol class="steps">
                     <li class="step" c-for="s in recipe.steps">{{s.txt}}
-                        <div class="help-note" c-for="n in s.notes">
-                            {{n.txt}}
-                            <a c-if="n.link != null" c-bind:href="n.link">{{n.link}}</a>
+                        <div class="help-note" c-for="n in s.notes" c-html="n">
                         </div>
                     </li>
                 </ol>
@@ -141,21 +139,30 @@ router.addRoute("#/*", {
             recipes.splice(this.recipes.length - 1, 0, to_insert);
             this.recipes = recipes;
         },
+        parse_note: function(txt) {
+            const markdownRegex = /\[([^\]]+)\]\((https?:\/\/[^\s]+)\)/g;
+            const urlRegex = /(?<!href=")(https?:\/\/[^\s]+)/g;
+
+            let match;
+            while (match = markdownRegex.exec(txt))
+                txt = txt.replace(match[0], `<a href="${match[2]}">${match[1]}</a>`);
+
+            const urlMatches = txt.match(urlRegex);
+            if (urlMatches != null)
+            {
+                for (let match of urlMatches)
+                    txt = txt.replace(match, `<a href=${match}>${match}</a>`);
+            }
+            return txt.replace("\n", "<br>");
+        },
         build_recipe_object: function(recipe) {
+            if (recipe.description)
+                recipe.description = this.parse_note(recipe.description);
+
             for (let step of recipe.steps)
             {
                 for (let i = 0; i < step.notes.length; i++)
-                {
-                    step.notes[i] = { txt: step.notes[i], link: null };
-
-                    const urlRegex = /(https?:\/\/[^\s]+)/g;
-                    const matches = step.notes[i].txt.match(urlRegex);
-                    if (matches != null)
-                    {
-                        step.notes[i].txt = step.notes[i].txt.replace(matches[0], "");
-                        step.notes[i].link = matches[0];
-                    }
-                }
+                    step.notes[i] = this.parse_note(step.notes[i]);
             }
 
             for (let link of recipe.recipe_links)
@@ -195,11 +202,12 @@ router.addRoute("#/*", {
                 let recipes = [];
                 for (let link of this.recipes[0].recipe_links)
                 {
-                    recipes.push(link.hash);
-
                     let recipe = descriptors.find(r => r.hash == link.hash);
                     if (recipe != null)
+                    {
                         link.name = recipe.name;
+                        recipes.push(link.hash);
+                    }
                 }
 
                 if (recipes.length != 0)
