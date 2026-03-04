@@ -2,7 +2,7 @@ import { app, router } from './main.js'
 
 router.addRoute("#/home", {
 	view: `
-		<div class="recipe-group container">
+		<div class="recipe-group">
             <recipeList c-init:tag="$parent.$parent.TAGS[0]"></recipeList>
             <recipeList c-init:tag="$parent.$parent.TAGS[2]"></recipeList>
             <recipeList c-init:tag="$parent.$parent.TAGS[4]"></recipeList>
