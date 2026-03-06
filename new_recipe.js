@@ -2,12 +2,12 @@ import { app, router } from './main.js'
 
 router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
 	view: `
-        <div class="container">
+        <div class="container recipe-card">
             <form class="recipe-form">
 
             <!-- Recipe Name -->
             <div class="form-group">
-                <h2>Nouvelle Recette</h2>
+                <h2>{{header_text}}</h2>
                 <input type="text" placeholder="Nom de la recette" c-model="name" required>
             </div>
 
@@ -84,9 +84,11 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
         ingredients: "",
         steps: "",
         filtering: false,
+        header_text: "",
         submit_text: "",
         current_hash: null,
         submit_event: null,
+        submitted: false,
     },
     controller: {
         find_link: function(link) {
@@ -187,6 +189,10 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
         },
         submit_form: function() {
 
+            // Prevent double creation
+            if (this.submitted) return;
+            this.submitted = true;
+
             let hash = this.current_hash != null ? this.current_hash : this.gen_hash(10); // Hope it doesn't collide
 
             let desc = {
@@ -226,8 +232,9 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
                     continue;
                 }
                 else if ((char === '.' || char === ',') && !hasDecimal) {
-                    continue;
+                    str = str.substring(0, i) + '.' + str.substring(i + 1);
                     hasDecimal = true;
+                    continue;
                 }
                 else {
                     break; // stop at first non-number character
@@ -235,7 +242,7 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
             }
 
             return i == 0 ? null : {
-                count: str.substr(0, i),
+                count: parseFloat(str.substr(0, i)),
                 rest: str.substr(i).trim()
             };
         },
@@ -351,9 +358,10 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
             this.recipe_links = [];
             this.ingredients = "";
             this.steps = "";
+            this.header_text = "Nouvelle Recette";
             this.submit_text = "Enregistrer la recette";
             this.current_hash = null;
-            document.title = "Nouvelle Recette";
+            this.submitted = false;
 
             if (this.submit_event == null)
             {
@@ -368,6 +376,11 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
             if (router.params.length == 3 && router.params[1].startsWith("edit/"))
             {
                 let hash = router.params[2];
+
+                this.header_text = "Modifier la Recette";
+                this.submit_text = "Sauvegarder les modifications";
+                this.current_hash = hash;
+
                 DB.get_recipe(hash).then((recipe) => {
 
                     for (let i = 0; i < recipe.recipe_links.length; i++)
@@ -382,9 +395,6 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
                     this.recipe_links = recipe.recipe_links;
                     this.ingredients = this.unparse_ingredients(recipe.ingredients);
                     this.steps = this.unparse_steps(recipe.steps, recipe.description);
-                    this.submit_text = "Sauvegarder les modifications";
-                    this.current_hash = hash;
-                    document.title = "Modifier la Recette";
 
                     return DB.get_descriptors();
                 })
@@ -397,6 +407,8 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
                     }
                 });
             }
+
+            document.title = this.header_text;
         }
     }
 });

@@ -72,7 +72,7 @@ DB.register(router);
 
 router.addRoute("#/signin", {
 	view: `
-		<div>
+        <div style="padding-top: 1em">
 		    <div id="firebaseui-auth-container"></div>
 		</div>
 	`,

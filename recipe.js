@@ -3,7 +3,7 @@ import { app, router } from './main.js'
 router.addRoute("#/*", {
 	view: `
         <div>
-            <div c-for="recipe in recipes" class="container">
+            <div c-for="recipe in recipes" class="container recipe-card">
                 <div class="recipe-header">
                     <h1>{{recipe.name}}</h1>
 
@@ -112,11 +112,11 @@ router.addRoute("#/*", {
                     if (list.has(ingredient.item))
                     {
                         let item = list.get(ingredient.item);
-                        item.count += parseFloat(ingredient.count);
+                        item.count += ingredient.count;
                     }
                     else
                     {
-                        list.set(ingredient.item, {count: parseFloat(ingredient.count), unit: ingredient.unit, item: ingredient.item});
+                        list.set(ingredient.item, {count: ingredient.count, unit: ingredient.unit, item: ingredient.item});
                     }
                 }
             }

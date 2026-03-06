@@ -27,7 +27,7 @@ router.addRoute("#/home", {
                 <div c-if="recipes.length != 0">
                     <h2>{{get_plural(tag)}}</h2>
                     <div class="recipe-container">
-                        <a c-for="r in recipes" class="recipe-card" c-bind:href="get_url(r)">
+                        <a c-for="r in recipes" class="recipe-card hoverable-card" c-bind:href="get_url(r)">
                             <h2 class="recipe-name">{{r.name}}</h2>
                             <div class="tags">
                                 <span class="tag" c-for="tag in r.tags">{{tag}}</span>

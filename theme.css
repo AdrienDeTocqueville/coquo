@@ -22,14 +22,14 @@
 
 /* Header */
 
-.center-text
-{
+.center-text {
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-main { height: calc(100vh - 3em); }
+body { background-color: #fafafa; }
+main { padding-top: 4em; }
 body > header
 {
     height: 4em;
@@ -96,6 +96,52 @@ hr
     fill: white;
 }
 
+/* Containers */
+
+.container {
+    max-width: 600px;
+    width: 100%;
+    padding: 30px;
+    margin-top: 30px;
+}
+
+.recipe-card {
+    background-color: #ffffff;
+
+    border-radius: 0.25rem;
+    border: .0625rem solid #e4e9f2;
+
+    border-top-style: solid;
+    border-top-width: .25rem;
+    border-top-color: #525d67;
+}
+
+.recipe-card h6 {
+    font-size: 1.125rem;
+    margin-top: 25px;
+    margin-bottom: 20px;
+}
+
+.hoverable-card {
+    text-decoration: none;
+    padding: 15px 20px;
+    width: 220px;
+
+    transition: transform 0.2s;
+}
+
+.hoverable-card:hover {
+    transform: scale(1.1);
+}
+
+/* Mobile layout */
+@media (max-width: 600px) {
+    .container {
+        margin-top: 0px;
+        border-top-style: none;
+    }
+}
+
 /* Recipe Container */
 .recipe-group {
     max-width: 75% !important;
@@ -111,34 +157,6 @@ hr
     justify-content: left;
 
     margin: 25px auto 70px;
-}
-
-/* Recipe card */
-.recipe-card {
-    text-decoration: none;
-    background-color: #fefefe;
-    padding: 15px 20px;
-    width: 220px;
-
-    border-radius: 0.25rem;
-    border: .0625rem solid #e4e9f2;
-
-    border-top-style: solid;
-    border-top-width: .25rem;
-    border-top-color: #525d67;
-
-    transition: transform 0.2s;
-}
-
-.recipe-card:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-}
-
-.recipe-name {
-    font-size: 18px;
-    margin-bottom: 10px;
-    color: #333;
 }
 
 /* Tags */
@@ -158,16 +176,6 @@ hr
 
 
 /* New Recipe */
-
-.container {
-    max-width: 600px;
-    width: 100%;
-    background-color: #ffffff;
-    padding: 30px;
-    margin-top: 30px;
-    border-radius: 12px;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-}
 
 .form-group {
     margin-bottom: 20px;
@@ -247,7 +255,7 @@ hr
 .recipe-form h2 {
     display: block;
     font-weight: bold;
-    margin-bottom: 6px;
+    margin-bottom: 12px;
     color: #555;
 }
 
@@ -282,6 +290,12 @@ button[type="submit"] {
 }
 
 /* Recipe page */
+
+.recipe-name {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #333;
+}
 
 .recipe-header {
     display: grid;
