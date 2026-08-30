@@ -1,7 +1,7 @@
 import { app, router } from './main.js'
 
 router.addRoute("#/*", {
-	view: `
+    view: `
         <div>
             <div c-for="recipe in recipes" class="container recipe-card">
                 <div class="recipe-header">
@@ -30,8 +30,8 @@ router.addRoute("#/*", {
 
                     <div c-if="is_main_recipe(recipe)" class="additional-actions">
                         <i c-on:click="show_groceries = true" class="fa-solid fa-basket-shopping"></i>
-                        <i c-on:click="do_edit()" class="fa-regular fa-pen-to-square"></i>
-                        <i c-on:click="ask_deletion = true" class="fa-regular fa-trash-can"></i>
+                        <i c-if="is_logged" c-on:click="do_edit()" class="fa-regular fa-pen-to-square"></i>
+                        <i c-if="is_logged" c-on:click="ask_deletion = true" class="fa-regular fa-trash-can"></i>
                     </div>
                 </div>
 
@@ -59,7 +59,7 @@ router.addRoute("#/*", {
                         </div>
                     </li>
                 </ol>
-		    </div>
+            </div>
 
             <div c-if="ask_deletion" id="modal">
                 <div class="modal-content">
@@ -81,13 +81,14 @@ router.addRoute("#/*", {
                     </ul>
                 </div>
             </div>
-		</div>
-	`,
+        </div>
+    `,
     model: {
         recipes: [],
         recipes_linked: [],
         ask_deletion: false,
         show_groceries: false,
+        is_logged: false,
     },
 
     controller: {
@@ -188,6 +189,8 @@ router.addRoute("#/*", {
 
         },
         onShow: function() {
+            this.is_logged = DB.is_logged();
+
             let hash = this.$router.route.substr(2);
             DB.get_recipe(hash).then((recipe) => {
 

@@ -114,6 +114,9 @@ hr
     border-top-style: solid;
     border-top-width: .25rem;
     border-top-color: #525d67;
+
+    font-family: var(--bs-body-font-family);
+    font-size: var(--bs-body-font-size);
 }
 
 .recipe-card h6 {
@@ -391,4 +394,39 @@ button[type="submit"] {
     top: 30%;
     left: 50%;
     transform: translate(-50%, 0px);
+}
+
+/* Clapping */
+
+@font-face { font-family: Brittany; src: url('./font/Brittany.ttf'); } 
+@font-face { font-family: CormorantGaramond; src: url('./font/CormorantGaramond.ttf'); } 
+
+.clapping
+{
+    font-family: "Brittany";
+    font-size: 1.7rem;
+}
+
+.session
+{
+    background-color: #f5f4f2;
+    border: .225rem solid #e4e9f2;
+}
+
+.session h2
+{
+    padding: 15px;
+}
+
+.menu
+{
+    font-family: "CormorantGaramond";
+    font-size: 17px;
+
+    margin-left: 20px;
+}
+
+.menu h5
+{
+    font-style: italic;
 }

@@ -28,9 +28,7 @@ var DB = {
                 profilePic.src = "";
                 profilePic.style.display = "none";
 
-                router.goto("#/signin");
-
-                console.log("No user signed in");
+                //router.goto("#/signin");
             }
             else
             {
@@ -39,8 +37,6 @@ var DB = {
 
                 if (router.route == "#/signin")
                     router.goto("#/home");
-
-                console.log("User signed in:", user.displayName);
             }
         });
     },

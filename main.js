@@ -18,7 +18,7 @@ export let app = new App({
     selector: "coquo",
     view: "<router> </router>",
     model: {
-        TAGS: ["Pâte", "Crème", "Gâteau", "Tarte", "Pâtisserie"],
+        TAGS: ["Pâte", "Crème", "Gâteau", "Tarte", "Pâtisserie", "Clapping"],
         TAGS_PLURAL: ["Pâtes", "Crèmes", "Gâteaux", "Tartes", "Pâtisseries"],
         UNITS: ["g", "kg", "mL", "cL", "L", "cm", "personnes"],
     },
@@ -61,21 +61,21 @@ export let app = new App({
 });
 
 export let router = new Router({
-	app,
-	selector: "router",
-	defaultRoute: "#/home",
-	notFoundRoute: "#/home"
+    app,
+    selector: "router",
+    defaultRoute: "#/home",
+    notFoundRoute: "#/home"
 });
 
 DB.register(router);
 
 
 router.addRoute("#/signin", {
-	view: `
+    view: `
         <div style="padding-top: 1em">
-		    <div id="firebaseui-auth-container"></div>
-		</div>
-	`,
+            <div id="firebaseui-auth-container"></div>
+        </div>
+    `,
     model: {
     },
     controller: {

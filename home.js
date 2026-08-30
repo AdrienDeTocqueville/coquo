@@ -1,8 +1,8 @@
 import { app, router } from './main.js'
 
 router.addRoute("#/home", {
-	view: `
-		<div class="recipe-group">
+    view: `
+        <div class="recipe-group">
             <recipeList c-init:tag="$parent.$parent.TAGS[0]"></recipeList>
             <recipeList c-init:tag="$parent.$parent.TAGS[2]"></recipeList>
             <recipeList c-init:tag="$parent.$parent.TAGS[4]"></recipeList>
@@ -10,14 +10,18 @@ router.addRoute("#/home", {
             <recipeList c-init:tag="$parent.$parent.TAGS[1]"></recipeList>
             <recipeList c-init:tag="null"></recipeList>
 
-            <button class="big-button floating-btn" id="new-recipe" c-on:click="$router.goto('#/new-recipe')">
+            <button class="big-button floating-btn" id="new-recipe" c-if="is_logged" c-on:click="$router.goto('#/new-recipe')">
                 <i class="fa-solid fa-plus"></i> Nouvelle Recette
             </button>
-		</div>
-	`,
+        </div>
+    `,
+    model: {
+        is_logged: false,
+    },
     controller: {
         onShow: function() {
             document.title = "Coquo";
+            this.is_logged = DB.is_logged();
         }
     },
 
@@ -38,7 +42,7 @@ router.addRoute("#/home", {
             `,
             model: {
                 tag: "",
-                recipes: []
+                recipes: [],
             },
             controller: {
                 get_plural: function(tag) {
