@@ -176,24 +176,13 @@ router.addRoute("#/(new-recipe|edit/([A-Za-z0-9]+))", {
 
         },
 
-        gen_hash: function(length) {
-            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            let result = "";
-
-            for (let i = 0; i < length; i++) {
-                const randomIndex = Math.floor(Math.random() * chars.length);
-                result += chars[randomIndex];
-            }
-
-            return result;
-        },
         submit_form: function() {
 
             // Prevent double creation
             if (this.submitted) return;
             this.submitted = true;
 
-            let hash = this.current_hash != null ? this.current_hash : this.gen_hash(10); // Hope it doesn't collide
+            let hash = this.current_hash != null ? this.current_hash : this.$parent.gen_hash(10); // Hope it doesn't collide
 
             let desc = {
                 name: this.name,
