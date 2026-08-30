@@ -8,6 +8,7 @@ router.addRoute("#/home", {
             <recipeList c-init:tag="$parent.$parent.TAGS[4]"></recipeList>
             <recipeList c-init:tag="$parent.$parent.TAGS[3]"></recipeList>
             <recipeList c-init:tag="$parent.$parent.TAGS[1]"></recipeList>
+            <recipeList c-init:tag="$parent.$parent.TAGS[5]"></recipeList>
             <recipeList c-init:tag="null"></recipeList>
 
             <button class="big-button floating-btn" id="new-recipe" c-if="is_logged" c-on:click="$router.goto('#/new-recipe')">

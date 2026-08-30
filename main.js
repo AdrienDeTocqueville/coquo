@@ -19,7 +19,7 @@ export let app = new App({
     view: "<router> </router>",
     model: {
         TAGS: ["Pâte", "Crème", "Gâteau", "Tarte", "Pâtisserie", "Clapping"],
-        TAGS_PLURAL: ["Pâtes", "Crèmes", "Gâteaux", "Tartes", "Pâtisseries"],
+        TAGS_PLURAL: ["Pâtes", "Crèmes", "Gâteaux", "Tartes", "Pâtisseries", "Clapping"],
         UNITS: ["g", "kg", "mL", "cL", "L", "cm", "personnes"],
     },
     controller: {
